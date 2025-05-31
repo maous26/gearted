@@ -9,6 +9,7 @@ import { errorMiddleware } from './api/middlewares/error.middleware';
 import authRoutes from './api/routes/auth.routes';
 import userRoutes from './api/routes/user.routes';
 import listingRoutes from './api/routes/listing.routes';
+import healthRoutes from './api/routes/health.routes';
 
 // Configuration
 config();
@@ -27,6 +28,7 @@ app.use(morgan('dev'));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
+app.use('/api/health', healthRoutes);
 
 // Gestion des erreurs
 app.use(errorMiddleware);

@@ -100,21 +100,27 @@ class FeaturesShowcaseScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Optimized logo container for gradient background
                   Container(
                     width: 48,
                     height: 48,
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        'assets/images/gearted.jpeg',
-                        fit: BoxFit.cover,
-                        width: 48,
-                        height: 48,
-                      ),
+                    child: Image.asset(
+                      'assets/images/gearted_transparent.png',
+                      fit: BoxFit.contain,
+                      width: 32,
+                      height: 32,
                     ),
                   ),
                   const SizedBox(height: 12),

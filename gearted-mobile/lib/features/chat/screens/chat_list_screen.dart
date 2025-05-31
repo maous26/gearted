@@ -1,50 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../widgets/common/state_widgets.dart';
+import '../../../widgets/common/animations.dart';
 
-class ChatListScreen extends StatelessWidget {
+class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock conversation data
-    final conversations = [
-      {
-        'name': 'Alexandre Martin',
-        'lastMessage': 'Salut, est-ce que la gearbox est toujours disponible ?',
-        'timestamp': '14:30',
-        'unreadCount': 2,
-        'isOnline': true,
-        'avatar': 'A',
-      },
-      {
-        'name': 'Sophie Dubois',
-        'lastMessage': 'Parfait ! Je prends le RDS. On peut se voir demain ?',
-        'timestamp': '12:15',
-        'unreadCount': 0,
-        'isOnline': false,
-        'avatar': 'S',
-      },
-      {
-        'name': 'Lucas Bernard',
-        'lastMessage': 'Merci pour la transaction rapide 👍',
-        'timestamp': 'Hier',
-        'unreadCount': 0,
-        'isOnline': true,
-        'avatar': 'L',
-      },
-      {
-        'name': 'Marine Leroy',
-        'lastMessage': 'Tu as d\'autres photos du gilet tactique ?',
-        'timestamp': 'Mar',
-        'unreadCount': 1,
-        'isOnline': false,
-        'avatar': 'M',
-      },
-    ];
+  State<ChatListScreen> createState() => _ChatListScreenState();
+}
 
+class _ChatListScreenState extends State<ChatListScreen> {
+  List<Map<String, dynamic>> _conversations = [
+    {
+      'id': '1',
+      'name': 'AirsoftPro',
+      'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=AirsoftPro',
+      'lastMessage': 'Salut ! L\'équipement est toujours disponible ?',
+      'lastMessageTime': '2025-05-31T16:45:00Z',
+      'unreadCount': 2,
+      'isOnline': true,
+      'lastSeen': null,
+    },
+    {
+      'id': '2',
+      'name': 'TacticalGear',
+      'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=TacticalGear',
+      'lastMessage': 'Merci pour la transaction, parfait !',
+      'lastMessageTime': '2025-05-31T14:20:00Z',
+      'unreadCount': 0,
+      'isOnline': false,
+      'lastSeen': '2025-05-31T15:30:00Z',
+    },
+    {
+      'id': '3',
+      'name': 'AlphaTeam',
+      'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=AlphaTeam',
+      'lastMessage': 'Je peux venir récupérer demain ?',
+      'lastMessageTime': '2025-05-31T12:15:00Z',
+      'unreadCount': 1,
+      'isOnline': true,
+      'lastSeen': null,
+    },
+    {
+      'id': '4',
+      'name': 'SnipeElite',
+      'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=SnipeElite',
+      'lastMessage': 'Photos envoyées, regardez vos messages',
+      'lastMessageTime': '2025-05-30T18:30:00Z',
+      'unreadCount': 0,
+      'isOnline': false,
+      'lastSeen': '2025-05-31T09:00:00Z',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: const Text('Conversations'),
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
@@ -52,133 +66,134 @@ class ChatListScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              // TODO: Implement search in conversations
+              // TODO: Implement search functionality
             },
           ),
         ],
       ),
-      body: conversations.isEmpty
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Aucun message pour le moment',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Vos conversations apparaîtront ici',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
+      body: _conversations.isEmpty
+          ? const EmptyStateWidget(
+              icon: Icons.chat_bubble_outline,
+              title: 'Aucune conversation',
+              subtitle: 'Vos conversations apparaîtront ici.',
             )
           : ListView.builder(
-              itemCount: conversations.length,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: _conversations.length,
               itemBuilder: (context, index) {
-                final conversation = conversations[index];
-                return _buildConversationTile(context, conversation);
+                final conversation = _conversations[index];
+                return AnimatedListItem(
+                  index: index,
+                  delay: const Duration(milliseconds: 100),
+                  child: _buildConversationTile(conversation),
+                );
               },
             ),
     );
   }
 
-  Widget _buildConversationTile(
-      BuildContext context, Map<String, dynamic> conversation) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Stack(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: Colors.blue.shade100,
-            child: Text(
-              conversation['avatar'],
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue.shade700,
-              ),
-            ),
-          ),
-          if (conversation['isOnline'])
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+  Widget _buildConversationTile(Map<String, dynamic> conversation) {
+    final DateTime lastMessageTime =
+        DateTime.parse(conversation['lastMessageTime']);
+    final bool isToday = DateTime.now().difference(lastMessageTime).inDays == 0;
+    final String timeText = isToday
+        ? '${lastMessageTime.hour.toString().padLeft(2, '0')}:${lastMessageTime.minute.toString().padLeft(2, '0')}'
+        : '${lastMessageTime.day}/${lastMessageTime.month}';
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: conversation['unreadCount'] > 0
+            ? Theme.of(context).primaryColor.withOpacity(0.05)
+            : null,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Stack(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.grey[300],
+              child: Text(
+                conversation['name'][0].toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
             ),
-        ],
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              conversation['name'],
-              style: TextStyle(
-                fontWeight: conversation['unreadCount'] > 0
-                    ? FontWeight.bold
-                    : FontWeight.w500,
+            if (conversation['isOnline'])
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                conversation['name'],
+                style: TextStyle(
+                  fontWeight: conversation['unreadCount'] > 0
+                      ? FontWeight.bold
+                      : FontWeight.w500,
+                  fontSize: 16,
+                ),
               ),
             ),
-          ),
-          Text(
-            conversation['timestamp'],
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
+            Text(
+              timeText,
+              style: TextStyle(
+                fontSize: 12,
+                color: conversation['unreadCount'] > 0
+                    ? Theme.of(context).primaryColor
+                    : Colors.grey[600],
+                fontWeight: conversation['unreadCount'] > 0
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
             ),
-          ),
-        ],
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Row(
+          ],
+        ),
+        subtitle: Row(
           children: [
             Expanded(
               child: Text(
                 conversation['lastMessage'],
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: conversation['unreadCount'] > 0
                       ? Colors.black87
-                      : Colors.grey.shade600,
+                      : Colors.grey[600],
                   fontWeight: conversation['unreadCount'] > 0
                       ? FontWeight.w500
                       : FontWeight.normal,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (conversation['unreadCount'] > 0)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Theme.of(context).primaryColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${conversation['unreadCount']}',
+                  conversation['unreadCount'].toString(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -188,12 +203,13 @@ class ChatListScreen extends StatelessWidget {
               ),
           ],
         ),
+        onTap: () {
+          // Navigate to individual chat
+          context.push(
+            '/chat/${conversation['id']}/${conversation['name']}/${conversation['avatar']}',
+          );
+        },
       ),
-      onTap: () {
-        // Navigate to individual chat conversation
-        context.push(
-            '/chat/${conversation['name'].replaceAll(' ', '_')}/${conversation['name']}/${conversation['avatar']}');
-      },
     );
   }
 }

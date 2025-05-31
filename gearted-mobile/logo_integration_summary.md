@@ -5,7 +5,7 @@
 ### 📱 **Logo Placements:**
 
 #### 1. **Splash Screen** (`/lib/features/auth/screens/splash_screen.dart`)
-- ✅ **Replaced generic icon** with your `gearted.jpeg` logo
+- ✅ **Replaced generic icon** with your `gearted_transparent.png` logo
 - ✅ **120x120 container** with rounded corners and shadow
 - ✅ **ClipRRect with BorderRadius.circular(24)** for perfect rounded display
 - ✅ **BoxFit.cover** to ensure proper image scaling

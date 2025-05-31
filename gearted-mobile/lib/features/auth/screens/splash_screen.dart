@@ -75,17 +75,16 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo/Icon
+                    // Logo/Icon - Optimized for transparent PNG
                     Container(
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            spreadRadius: 5,
+                            color: Colors.black.withOpacity(0.2),
+                            spreadRadius: 2,
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -94,8 +93,8 @@ class _SplashScreenState extends State<SplashScreen>
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(24),
                         child: Image.asset(
-                          'assets/images/gearted.jpeg',
-                          fit: BoxFit.cover,
+                          'assets/images/gearted_transparent.png',
+                          fit: BoxFit.contain,
                           width: 120,
                           height: 120,
                         ),

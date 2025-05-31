@@ -42,21 +42,16 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
+            // Optimized transparent logo for app bar
             Container(
               width: 32,
               height: 32,
               margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  'assets/images/gearted.jpeg',
-                  fit: BoxFit.cover,
-                  width: 32,
-                  height: 32,
-                ),
+              child: Image.asset(
+                'assets/images/gearted_transparent.png',
+                fit: BoxFit.contain,
+                width: 32,
+                height: 32,
               ),
             ),
             const Text(
