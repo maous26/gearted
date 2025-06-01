@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
+import '../../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +15,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = AuthService();
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _emailError;
@@ -82,19 +84,77 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // TODO: Implémenter l'authentification API réelle
-      await Future.delayed(const Duration(seconds: 2)); // Simulation d'appel API
+      await _authService.signInWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
       
       if (context.mounted) {
-        // Redirection vers l'écran d'accueil après connexion réussie
         context.go('/home');
       }
     } catch (e) {
-      // Gérer les erreurs d'authentification
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur de connexion: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await _authService.signInWithGoogle();
+      
+      if (result != null && context.mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de connexion Google: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loginWithFacebook() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await _authService.signInWithFacebook();
+      
+      if (result != null && context.mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de connexion Facebook: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -250,12 +310,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildSocialButton(
-                      onPressed: () {},
+                      onPressed: _loginWithGoogle,
                       icon: Icons.g_mobiledata,
                     ),
                     const SizedBox(width: 16),
                     _buildSocialButton(
-                      onPressed: () {},
+                      onPressed: _loginWithFacebook,
                       icon: Icons.facebook,
                     ),
                     const SizedBox(width: 16),

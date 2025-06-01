@@ -105,6 +105,17 @@ class ApiService {
     await prefs.remove('auth_token');
   }
   
+  // Méthode générique pour les requêtes POST
+  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post(endpoint, data: data);
+      return response.data;
+    } catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+  
   // Gestion des erreurs
   void _handleError(dynamic error) {
     if (error is DioException) {

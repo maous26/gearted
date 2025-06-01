@@ -4,10 +4,15 @@ import bcrypt from 'bcrypt';
 export interface IUser extends Document {
   username: string;
   email: string;
-  password: string;
+  password?: string;
   profileImage?: string;
   rating: number;
   salesCount: number;
+  googleId?: string;
+  facebookId?: string;
+  provider: 'local' | 'google' | 'facebook';
+  isEmailVerified: boolean;
+  fcmToken?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
   createdAt: Date;
   updatedAt: Date;
@@ -30,7 +35,9 @@ const userSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, 'Le mot de passe est requis'],
+      required: function(this: IUser) {
+        return this.provider === 'local';
+      },
       minlength: [6, 'Le mot de passe doit contenir au moins 6 caractères'],
       select: false,
     },
@@ -46,6 +53,29 @@ const userSchema = new Schema<IUser>(
       type: Number,
       default: 0,
     },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    facebookId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    provider: {
+      type: String,
+      enum: ['local', 'google', 'facebook'],
+      default: 'local',
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    fcmToken: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -54,7 +84,7 @@ const userSchema = new Schema<IUser>(
 
 // Hashage du mot de passe avant sauvegarde
 userSchema.pre<IUser>('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -68,6 +98,9 @@ userSchema.pre<IUser>('save', async function(next) {
 // Méthode pour comparer les mots de passe
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
   try {
+    if (!this.password) {
+      throw new Error('Aucun mot de passe défini pour cet utilisateur');
+    }
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
     throw new Error(error as any);

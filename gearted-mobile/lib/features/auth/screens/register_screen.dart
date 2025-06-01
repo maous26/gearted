@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
+import '../../../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _authService = AuthService();
   
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -145,19 +147,78 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // TODO: Implémenter l'authentification API réelle
-      await Future.delayed(const Duration(seconds: 2)); // Simulation d'appel API
+      await _authService.signUpWithEmail(
+        _usernameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
       
       if (context.mounted) {
-        // Redirection vers l'écran d'accueil après inscription réussie
         context.go('/home');
       }
     } catch (e) {
-      // Gérer les erreurs d'inscription
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur d\'inscription: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _registerWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await _authService.signInWithGoogle();
+      
+      if (result != null && context.mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur d\'inscription Google: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _registerWithFacebook() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await _authService.signInWithFacebook();
+      
+      if (result != null && context.mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur d\'inscription Facebook: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -333,6 +394,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   fullWidth: true,
                 ),
                 
+                const SizedBox(height: 24),
+                
+                // Séparateur
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: Colors.grey.shade300,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'ou',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color: Colors.grey.shade300,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Boutons d'inscription sociale
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildSocialButton(
+                      onPressed: _registerWithGoogle,
+                      icon: Icons.g_mobiledata,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildSocialButton(
+                      onPressed: _registerWithFacebook,
+                      icon: Icons.facebook,
+                    ),
+                  ],
+                ),
+                
                 const SizedBox(height: 32),
                 
                 // Lien de connexion
@@ -357,6 +463,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.grey.shade300,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 30,
+          color: Colors.grey.shade700,
         ),
       ),
     );

@@ -2,8 +2,10 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import session from 'express-session';
 import { config } from 'dotenv';
 import { errorMiddleware } from './api/middlewares/error.middleware';
+import passport from './config/passport';
 
 // Routes
 import authRoutes from './api/routes/auth.routes';
@@ -20,10 +22,28 @@ const app: Application = express();
 
 // Middlewares
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+
+// Session middleware pour OAuth
+app.use(session({
+  secret: process.env.JWT_SECRET || 'default_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000, // 24 heures
+  }
+}));
+
+// Initialiser Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 app.use('/api/auth', authRoutes);

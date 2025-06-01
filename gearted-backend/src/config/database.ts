@@ -1,14 +1,19 @@
-import mongoose from 'mongoose';
+import mongoose, { ConnectOptions } from 'mongoose';
 import { logger } from '../utils/logger';
 
 // Configuration Mongoose
 mongoose.set('strictQuery', false);
 
-// Options de connexion recommandées
-const mongooseOptions = {
+// Options de connexion recommandées pour production
+const mongooseOptions: ConnectOptions = {
   maxPoolSize: 10, // Nombre maximum de connexions dans le pool
   serverSelectionTimeoutMS: 5000, // Timeout de 5s pour la sélection du serveur
   socketTimeoutMS: 45000, // Timeout de 45s pour les sockets
+  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+  family: 4, // Use IPv4, skip trying IPv6
+  retryWrites: true, // Retry writes on network errors
+  retryReads: true, // Retry reads on network errors
+  compressors: ['zstd', 'zlib'], // Enable compression
 };
 
 const connectDB = async (): Promise<void> => {
