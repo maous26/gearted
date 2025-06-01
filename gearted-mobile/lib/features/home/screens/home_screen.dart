@@ -42,16 +42,35 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            // Optimized transparent logo for app bar
+            // Enhanced visible logo for app bar
             Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(right: 8),
-              child: Image.asset(
-                'assets/images/gearted_transparent.png',
-                fit: BoxFit.contain,
-                width: 32,
-                height: 32,
+              width: 40,
+              height: 40,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
+                  color: GeartedTheme.lightBlue.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Image.asset(
+                  'assets/images/gearted_transparent.png',
+                  fit: BoxFit.contain,
+                  width: 28,
+                  height: 28,
+                ),
               ),
             ),
             const Text(

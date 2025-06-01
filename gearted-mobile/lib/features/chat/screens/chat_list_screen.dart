@@ -204,10 +204,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ],
         ),
         onTap: () {
-          // Navigate to individual chat
-          context.push(
-            '/chat/${conversation['id']}/${conversation['name']}/${conversation['avatar']}',
-          );
+          // Navigate to individual chat with query parameters
+          final chatId = conversation['id'];
+          final chatName = Uri.encodeComponent(conversation['name']);
+
+          // Don't pass avatar URL through routing - handle it differently
+          context.push('/chat/$chatId?name=$chatName');
         },
       ),
     );

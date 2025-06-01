@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class ChatScreen extends StatefulWidget {
   final String chatId;
   final String chatName;
-  final String chatAvatar;
+  final String? chatAvatar;
 
   const ChatScreen({
     super.key,
     required this.chatId,
     required this.chatName,
-    required this.chatAvatar,
+    this.chatAvatar,
   });
 
   @override

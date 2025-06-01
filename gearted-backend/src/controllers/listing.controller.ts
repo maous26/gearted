@@ -23,7 +23,7 @@ export const getListings = async (req: Request, res: Response, next: NextFunctio
     
     // Recherche textuelle
     if (search) {
-      filter. = { : search as string };
+      filter.$text = { $search: search.toString() };
     }
     
     // Filtre par catégorie
@@ -39,8 +39,8 @@ export const getListings = async (req: Request, res: Response, next: NextFunctio
     // Filtre par prix
     if (minPrice || maxPrice) {
       filter.price = {};
-      if (minPrice) filter.price. = Number(minPrice);
-      if (maxPrice) filter.price. = Number(maxPrice);
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
     
     // Filtre par échange possible
@@ -230,7 +230,7 @@ export const deleteListing = async (req: Request, res: Response, next: NextFunct
       });
     }
     
-    await listing.remove();
+    await Listing.findByIdAndDelete(id);
     
     res.status(200).json({
       success: true,

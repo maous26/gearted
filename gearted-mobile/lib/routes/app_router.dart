@@ -140,15 +140,18 @@ GoRouter createRouter() {
 
       // Individual chat conversation
       GoRoute(
-        path: '/chat/:chatId/:chatName/:chatAvatar',
+        path: '/chat/:chatId',
         builder: (context, state) {
           final chatId = state.pathParameters['chatId'] ?? '';
-          final chatName = state.pathParameters['chatName'] ?? '';
-          final chatAvatar = state.pathParameters['chatAvatar'] ?? '';
+          final chatName = state.uri.queryParameters['name'] ?? 'Chat';
+
+          print('Navigation vers chat - ID: $chatId');
+          print('Nom: $chatName');
+          print('URL complète: ${state.uri}');
+
           return ChatScreen(
             chatId: chatId,
             chatName: chatName,
-            chatAvatar: chatAvatar,
           );
         },
       ),
@@ -183,10 +186,34 @@ GoRouter createRouter() {
         builder: (context, state) => const FeaturesShowcaseScreen(),
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Route non trouvée: ${state.uri}'),
-      ),
-    ),
+    errorBuilder: (context, state) {
+      print('Erreur de routage: ${state.uri}'); // Debug log
+      print('Path: ${state.uri.path}'); // Debug log
+      print('Query: ${state.uri.queryParameters}'); // Debug log
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Erreur de navigation'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/chats'),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Route non trouvée: ${state.uri}'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.go('/chats'),
+                child: const Text('Retour aux conversations'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }

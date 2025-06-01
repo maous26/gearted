@@ -100,27 +100,38 @@ class FeaturesShowcaseScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Optimized logo container for gradient background
+                  // Enhanced high-visibility logo for showcase
                   Container(
-                    width: 48,
-                    height: 48,
-                    padding: const EdgeInsets.all(8),
+                    width: 64,
+                    height: 64,
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 4),
+                        ),
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.8),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                          offset: const Offset(0, -1),
                         ),
                       ],
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.5),
+                        width: 2,
+                      ),
                     ),
                     child: Image.asset(
                       'assets/images/gearted_transparent.png',
                       fit: BoxFit.contain,
-                      width: 32,
-                      height: 32,
+                      width: 40,
+                      height: 40,
                     ),
                   ),
                   const SizedBox(height: 12),
