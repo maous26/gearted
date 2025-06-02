@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../services/user_service.dart';
+import '../../../services/listings_service.dart';
 
-class ListingDetailScreen extends StatelessWidget {
+class ListingDetailScreen extends StatefulWidget {
   final String listingId;
 
   const ListingDetailScreen({
@@ -9,9 +11,101 @@ class ListingDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<ListingDetailScreen> createState() => _ListingDetailScreenState();
+}
+
+class _ListingDetailScreenState extends State<ListingDetailScreen> {
+  final UserService _userService = UserService();
+  Map<String, dynamic>? _sellerInfo;
+  Map<String, dynamic>? _listingData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadListingData();
+  }
+
+  Future<void> _loadListingData() async {
+    try {
+      // Load listing data from service
+      final listingData =
+          await ListingsService.getListingById(widget.listingId);
+
+      // Load seller info
+      final sellerInfo = await _userService.getSellerInfo();
+
+      if (mounted) {
+        setState(() {
+          _listingData = listingData;
+          _sellerInfo = sellerInfo;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        // Error loading listing data
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors du chargement de l\'annonce'),
+          ),
+        );
+      }
+    }
+  }
+
+  Map<String, dynamic> _getDefaultSellerInfo() {
+    return _sellerInfo ??
+        {
+          'name': 'Vendeur inconnu',
+          'avatar': 'V',
+          'rating': 0.0,
+          'reviews': 0,
+          'memberSince': '2024',
+          'isOnline': false,
+        };
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Mock data based on listing ID
-    final mockData = _getMockListingData(listingId);
+    // Show loading state while data is being fetched
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Détail de l\'annonce'),
+          elevation: 0,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Handle case when listing is not found
+    if (_listingData == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Détail de l\'annonce'),
+          elevation: 0,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
+        ),
+        body: const Center(
+          child: Text(
+            'Annonce non trouvée',
+            style: TextStyle(fontSize: 18),
+          ),
+        ),
+      );
+    }
+
+    // Use real listing data
+    final listingData = _listingData!;
 
     return Scaffold(
       appBar: AppBar(
@@ -73,7 +167,7 @@ class ListingDetailScreen extends StatelessWidget {
                 children: [
                   // Title and condition
                   Text(
-                    mockData['title'],
+                    listingData['title'] ?? 'Titre non disponible',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -88,7 +182,7 @@ class ListingDetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      mockData['condition'],
+                      listingData['condition'] ?? 'Condition non spécifiée',
                       style: TextStyle(
                         color: Colors.green.shade700,
                         fontWeight: FontWeight.w500,
@@ -101,14 +195,14 @@ class ListingDetailScreen extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '${mockData['price']} €',
+                        '${listingData['price'] ?? 0} €',
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.green,
                         ),
                       ),
-                      if (mockData['isNegotiable'])
+                      if (listingData['isNegotiable'] == true)
                         Container(
                           margin: const EdgeInsets.only(left: 12),
                           padding: const EdgeInsets.symmetric(
@@ -132,10 +226,22 @@ class ListingDetailScreen extends StatelessWidget {
 
                   // Item details
                   _buildDetailSection('Détails', [
-                    {'label': 'Catégorie', 'value': mockData['category']},
-                    {'label': 'Marque', 'value': mockData['brand']},
-                    {'label': 'Publié le', 'value': mockData['publishedDate']},
-                    {'label': 'Localisation', 'value': mockData['location']},
+                    {
+                      'label': 'Catégorie',
+                      'value': listingData['category'] ?? 'Non spécifiée'
+                    },
+                    {
+                      'label': 'Marque',
+                      'value': listingData['brand'] ?? 'Non spécifiée'
+                    },
+                    {
+                      'label': 'Publié le',
+                      'value': listingData['publishedDate'] ?? 'Date inconnue'
+                    },
+                    {
+                      'label': 'Localisation',
+                      'value': listingData['location'] ?? 'Non spécifiée'
+                    },
                   ]),
                   const SizedBox(height: 24),
 
@@ -143,13 +249,15 @@ class ListingDetailScreen extends StatelessWidget {
                   _buildDetailSection('Description', null),
                   const SizedBox(height: 8),
                   Text(
-                    mockData['description'],
+                    listingData['description'] ??
+                        'Aucune description disponible',
                     style: const TextStyle(fontSize: 16, height: 1.5),
                   ),
                   const SizedBox(height: 24),
 
                   // Seller info
-                  _buildSellerSection(mockData['seller']),
+                  _buildSellerSection(
+                      listingData['seller'] ?? _getDefaultSellerInfo()),
                   const SizedBox(height: 100), // Space for bottom buttons
                 ],
               ),
@@ -163,7 +271,7 @@ class ListingDetailScreen extends StatelessWidget {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               spreadRadius: 1,
               blurRadius: 10,
               offset: const Offset(0, -2),
@@ -371,52 +479,5 @@ class ListingDetailScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Map<String, dynamic> _getMockListingData(String id) {
-    final listings = {
-      '1': {
-        'title': 'Gearbox V2 complète SHS',
-        'price': 95,
-        'condition': 'Très bon état',
-        'category': 'Gearbox & Moteurs',
-        'brand': 'SHS',
-        'publishedDate': '15 mai 2025',
-        'location': 'Paris, 75011',
-        'isNegotiable': true,
-        'description':
-            'Gearbox V2 complète de marque SHS en très bon état. Utilisée seulement quelques parties. Inclut moteur high-torque, ressort M120, et tous les accessoires d\'origine. Parfaite pour upgrade ou remplacement.',
-        'seller': {
-          'name': 'Alexandre Martin',
-          'avatar': 'A',
-          'rating': 4.8,
-          'reviews': 23,
-          'memberSince': '2023',
-          'isOnline': true,
-        },
-      },
-      '2': {
-        'title': 'RDS Eotech replica',
-        'price': 65,
-        'condition': 'Bon état',
-        'category': 'Optiques & Viseurs',
-        'brand': 'Element',
-        'publishedDate': '12 mai 2025',
-        'location': 'Lyon, 69000',
-        'isNegotiable': false,
-        'description':
-            'Réplique fidèle du célèbre viseur Eotech 551. Très bonne qualité de fabrication, réticule lumineux avec plusieurs intensités. Rail 20mm standard. Quelques marques d\'usage mais fonctionne parfaitement.',
-        'seller': {
-          'name': 'Sophie Dubois',
-          'avatar': 'S',
-          'rating': 4.6,
-          'reviews': 15,
-          'memberSince': '2024',
-          'isOnline': false,
-        },
-      },
-    };
-
-    return listings[id] ?? listings['1']!;
   }
 }

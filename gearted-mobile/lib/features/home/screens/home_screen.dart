@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_card.dart';
 import '../../../widgets/common/animations.dart';
+import '../../../services/listings_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,11 +14,52 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isRefreshing = false;
+  List<Map<String, dynamic>> _hotDeals = [];
+  List<Map<String, dynamic>> _recentListings = [];
+  Set<String> _favoriteListings = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadListings();
+  }
+
+  Future<void> _loadListings() async {
+    try {
+      final hotDeals = await ListingsService.getHotDeals();
+      final recentListings = await ListingsService.getRecentListings();
+      final favoriteListings = await ListingsService.getFavoriteListings();
+
+      if (mounted) {
+        setState(() {
+          _hotDeals = hotDeals;
+          _recentListings = recentListings;
+          _favoriteListings = favoriteListings;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de chargement: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> _handleRefresh() async {
     setState(() {
       _isRefreshing = true;
     });
+
+    await _loadListings();
 
     // Simulate refresh delay
     await Future.delayed(const Duration(seconds: 2));
@@ -266,74 +308,93 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          SizedBox(
-                            height: 250,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: 5,
-                              itemBuilder: (context, index) {
-                                final items = [
-                                  {
-                                    'title': 'M4A1 Daniel Defense',
-                                    'price': 250.0,
-                                    'originalPrice': 350.0,
-                                    'condition': 'Comme neuf',
-                                    'rating': 4.8,
-                                  },
-                                  {
-                                    'title': 'Gearbox V2 complète',
-                                    'price': 80.0,
-                                    'originalPrice': 120.0,
-                                    'condition': 'Bon état',
-                                    'rating': 4.5,
-                                  },
-                                  {
-                                    'title': 'Red dot Aimpoint',
-                                    'price': 45.0,
-                                    'condition': 'Très bon état',
-                                    'rating': 4.7,
-                                  },
-                                  {
-                                    'title': 'Lunette de précision',
-                                    'price': 120.0,
-                                    'originalPrice': 180.0,
-                                    'condition': 'Comme neuf',
-                                    'rating': 4.9,
-                                  },
-                                  {
-                                    'title': 'Casque avec rail',
-                                    'price': 75.0,
-                                    'condition': 'Bon état',
-                                    'rating': 4.2,
-                                  },
-                                ];
-
-                                final item = items[index % items.length];
-
-                                return AnimatedListItem(
-                                  index: index,
-                                  delay: const Duration(milliseconds: 100),
-                                  child: Container(
-                                    width: 160,
-                                    margin: const EdgeInsets.only(right: 12),
-                                    child: GeartedItemCard(
-                                      title: item['title'] as String,
-                                      price: item['price'] as double,
-                                      originalPrice:
-                                          item['originalPrice'] as double?,
-                                      condition: item['condition'] as String,
-                                      rating: item['rating'] as double,
-                                      onTap: () {
-                                        context.push('/listing/${index + 10}');
-                                      },
-                                      onFavoriteToggle: () {},
-                                      isFavorite: index == 2,
-                                    ),
+                          _isLoading
+                              ? const SizedBox(
+                                  height: 250,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
+                                )
+                              : _hotDeals.isEmpty
+                                  ? const SizedBox(
+                                      height: 250,
+                                      child: Center(
+                                        child: Text(
+                                          'Aucune offre spéciale pour le moment',
+                                          style: TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox(
+                                      height: 250,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: _hotDeals.length,
+                                        itemBuilder: (context, index) {
+                                          final item = _hotDeals[index];
+                                          final listingId =
+                                              item['id'] as String;
+
+                                          return AnimatedListItem(
+                                            index: index,
+                                            delay: const Duration(
+                                                milliseconds: 100),
+                                            child: Container(
+                                              width: 160,
+                                              margin: const EdgeInsets.only(
+                                                  right: 12),
+                                              child: GeartedItemCard(
+                                                title: item['title'] as String,
+                                                price: item['price'] as double,
+                                                originalPrice:
+                                                    item['originalPrice']
+                                                        as double?,
+                                                condition:
+                                                    item['condition'] as String,
+                                                rating: (item['rating']
+                                                        as double?) ??
+                                                    0.0,
+                                                onTap: () {
+                                                  context.push(
+                                                      '/listing/$listingId');
+                                                },
+                                                onFavoriteToggle: () async {
+                                                  try {
+                                                    await ListingsService
+                                                        .toggleFavorite(
+                                                            listingId);
+                                                    // Refresh favorites
+                                                    final updatedFavorites =
+                                                        await ListingsService
+                                                            .getFavoriteListings();
+                                                    setState(() {
+                                                      _favoriteListings =
+                                                          updatedFavorites;
+                                                    });
+                                                  } catch (e) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'Erreur: ${e.toString()}'),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                isFavorite: _favoriteListings
+                                                    .contains(listingId),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
                         ],
                       ),
                     ),
@@ -361,76 +422,91 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.75,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
-                            itemCount: 6,
-                            itemBuilder: (context, index) {
-                              final items = [
-                                {
-                                  'title': 'AK-74 Cyma',
-                                  'price': 180.0,
-                                  'condition': 'Neuf',
-                                  'rating': 4.6,
-                                },
-                                {
-                                  'title': 'Pistolet GBB',
-                                  'price': 95.0,
-                                  'condition': 'Comme neuf',
-                                  'rating': 4.4,
-                                },
-                                {
-                                  'title': 'Bipied tactique',
-                                  'price': 25.0,
-                                  'condition': 'Bon état',
-                                  'rating': 4.3,
-                                },
-                                {
-                                  'title': 'Holster Kydex',
-                                  'price': 35.0,
-                                  'condition': 'Neuf',
-                                  'rating': 4.8,
-                                },
-                                {
-                                  'title': 'Chargeur 30bbs',
-                                  'price': 15.0,
-                                  'condition': 'Très bon état',
-                                  'rating': 4.2,
-                                },
-                                {
-                                  'title': 'Rail Picatinny',
-                                  'price': 20.0,
-                                  'condition': 'Comme neuf',
-                                  'rating': 4.5,
-                                },
-                              ];
+                          _isLoading
+                              ? const SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : _recentListings.isEmpty
+                                  ? const SizedBox(
+                                      height: 300,
+                                      child: Center(
+                                        child: Text(
+                                          'Aucun article récent pour le moment',
+                                          style: TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        childAspectRatio: 0.75,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                      ),
+                                      itemCount: _recentListings.length > 6
+                                          ? 6
+                                          : _recentListings.length,
+                                      itemBuilder: (context, index) {
+                                        final item = _recentListings[index];
+                                        final listingId = item['id'] as String;
 
-                              final item = items[index % items.length];
-
-                              return AnimatedListItem(
-                                index: index,
-                                delay: const Duration(milliseconds: 50),
-                                child: GeartedItemCard(
-                                  title: item['title'] as String,
-                                  price: item['price'] as double,
-                                  condition: item['condition'] as String,
-                                  rating: item['rating'] as double,
-                                  onTap: () {
-                                    context.push('/listing/${index + 1}');
-                                  },
-                                  onFavoriteToggle: () {},
-                                  isFavorite: index == 1 || index == 4,
-                                ),
-                              );
-                            },
-                          ),
+                                        return AnimatedListItem(
+                                          index: index,
+                                          delay:
+                                              const Duration(milliseconds: 50),
+                                          child: GeartedItemCard(
+                                            title: item['title'] as String,
+                                            price: item['price'] as double,
+                                            originalPrice: item['originalPrice']
+                                                as double?,
+                                            condition:
+                                                item['condition'] as String,
+                                            rating:
+                                                (item['rating'] as double?) ??
+                                                    0.0,
+                                            onTap: () {
+                                              context
+                                                  .push('/listing/$listingId');
+                                            },
+                                            onFavoriteToggle: () async {
+                                              try {
+                                                await ListingsService
+                                                    .toggleFavorite(listingId);
+                                                // Refresh favorites
+                                                final updatedFavorites =
+                                                    await ListingsService
+                                                        .getFavoriteListings();
+                                                setState(() {
+                                                  _favoriteListings =
+                                                      updatedFavorites;
+                                                });
+                                              } catch (e) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                        'Erreur: ${e.toString()}'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            isFavorite: _favoriteListings
+                                                .contains(listingId),
+                                          ),
+                                        );
+                                      },
+                                    ),
                         ],
                       ),
                     ),

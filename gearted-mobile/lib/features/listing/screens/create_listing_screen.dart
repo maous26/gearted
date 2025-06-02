@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
+import '../../../services/listings_service.dart';
 
 class CreateListingScreen extends StatefulWidget {
   const CreateListingScreen({super.key});
@@ -70,13 +72,69 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   void _addImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    // Limite de 5 images maximum
+    if (_imageUrls.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vous ne pouvez ajouter que 5 images maximum'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
-    if (image != null) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galerie'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickImageFromSource(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Appareil photo'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickImageFromSource(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _pickImageFromSource(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: source,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 85,
+    );
+
+    if (image != null && mounted) {
       setState(() {
         _imageUrls.add(image.path);
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image ajoutée (${_imageUrls.length}/5)'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
     }
   }
 
@@ -106,18 +164,35 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     });
 
     try {
-      // TODO: Intégrer avec l'API réelle
-      await Future.delayed(
-          const Duration(seconds: 2)); // Simulation d'appel API
+      // Create listing object
+      final listing = {
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'price': double.parse(_priceController.text),
+        'originalPrice':
+            null, // User-created listings don't have original price by default
+        'condition': _selectedCondition,
+        'category': _selectedCategory,
+        'tags': _tags,
+        'imageUrls': _imageUrls,
+        'isExchangeable': _isExchangeable,
+        'rating': 0.0, // Default rating for new listings
+      };
+
+      // Save listing locally
+      await ListingsService.addListing(listing);
 
       if (context.mounted) {
-        // Redirection vers l'écran d'accueil après création réussie
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Annonce créée avec succès'),
+            content: Text('Annonce créée avec succès !'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
           ),
         );
+
+        // Navigate to home and refresh
         context.go('/home');
       }
     } catch (e) {
@@ -154,19 +229,36 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Section photos
-              const Text(
-                'Photos',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Photos',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${_imageUrls.length}/5',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _imageUrls.isEmpty
+                          ? Colors.red
+                          : GeartedTheme.primaryBlue,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Ajoutez jusqu\'à 8 photos de votre article',
+              Text(
+                _imageUrls.isEmpty
+                    ? 'Ajoutez au moins une photo de votre article'
+                    : 'Ajoutez jusqu\'à 5 photos de votre article',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: _imageUrls.isEmpty ? Colors.red : Colors.grey,
                 ),
               ),
               const SizedBox(height: 16),
@@ -178,43 +270,45 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   scrollDirection: Axis.horizontal,
                   children: [
                     // Bouton d'ajout d'image
-                    GestureDetector(
-                      onTap: _addImage,
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.grey.shade300,
+                    if (_imageUrls.length < 5)
+                      GestureDetector(
+                        onTap: _addImage,
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_a_photo,
+                                size: 32,
+                                color: GeartedTheme.primaryBlue,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Ajouter',
+                                style: TextStyle(
+                                  color: GeartedTheme.primaryBlue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_a_photo,
-                              size: 32,
-                              color: GeartedTheme.primaryBlue,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Ajouter',
-                              style: TextStyle(
-                                color: GeartedTheme.primaryBlue,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
 
                     // Images ajoutées
                     ..._imageUrls.asMap().entries.map((entry) {
                       final index = entry.key;
+                      final imagePath = entry.value;
                       return Stack(
                         children: [
                           Container(
@@ -222,14 +316,29 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             height: 120,
                             margin: const EdgeInsets.only(right: 8),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.image,
-                                size: 32,
-                                color: Colors.white,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(imagePath),
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 120,
+                                    height: 120,
+                                    color: Colors.grey.shade200,
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.broken_image,
+                                        size: 32,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
