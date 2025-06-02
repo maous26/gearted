@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -125,8 +126,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: Icons.logout,
               title: 'Déconnexion',
               subtitle: 'Se déconnecter de l\'app',
-              onTap: () {
-                // TODO: Implement logout
+              onTap: () async {
+                // Show confirmation dialog
+                final bool? confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Déconnexion'),
+                      content: const Text(
+                          'Êtes-vous sûr de vouloir vous déconnecter ?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Annuler'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Déconnexion',
+                              style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (confirmed == true) {
+                  try {
+                    // Show loading indicator
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Déconnexion en cours...')),
+                      );
+                    }
+
+                    // Perform logout
+                    await AuthService().signOut();
+
+                    // Navigate to login screen (replace the entire navigation stack)
+                    if (mounted) {
+                      context.go('/login');
+                    }
+                  } catch (error) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content:
+                              Text('Erreur lors de la déconnexion: $error'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                }
               },
               isDestructive: true,
             ),

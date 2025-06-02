@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
@@ -17,14 +18,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
-  
+
   String _selectedCategory = 'Répliques';
   String _selectedCondition = 'Très bon état';
   bool _isExchangeable = false;
   List<String> _tags = [];
   List<String> _imageUrls = [];
   bool _isLoading = false;
-  
+
   // Options pour les dropdowns
   final List<String> _categories = [
     'Répliques',
@@ -36,7 +37,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     'Tenues',
     'Accessoires',
   ];
-  
+
   final List<String> _conditions = [
     'Neuf',
     'Comme neuf',
@@ -68,11 +69,15 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     });
   }
 
-  void _addImage() {
-    // Simuler l'ajout d'une image
-    setState(() {
-      _imageUrls.add('https://example.com/image${_imageUrls.length + 1}.jpg');
-    });
+  void _addImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        _imageUrls.add(image.path);
+      });
+    }
   }
 
   void _removeImage(int index) {
@@ -85,7 +90,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     if (_imageUrls.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -95,15 +100,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       );
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // TODO: Intégrer avec l'API réelle
-      await Future.delayed(const Duration(seconds: 2)); // Simulation d'appel API
-      
+      await Future.delayed(
+          const Duration(seconds: 2)); // Simulation d'appel API
+
       if (context.mounted) {
         // Redirection vers l'écran d'accueil après création réussie
         ScaffoldMessenger.of(context).showSnackBar(
@@ -164,7 +170,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Grille d'images
               SizedBox(
                 height: 120,
@@ -205,7 +211,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         ),
                       ),
                     ),
-                    
+
                     // Images ajoutées
                     ..._imageUrls.asMap().entries.map((entry) {
                       final index = entry.key;
@@ -252,9 +258,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Titre
               GeartedTextField(
                 label: 'Titre',
@@ -262,9 +268,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 controller: _titleController,
                 maxLength: 80,
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Description
               GeartedTextField(
                 label: 'Description',
@@ -273,9 +279,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 maxLines: 4,
                 maxLength: 1000,
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Prix
               GeartedTextField(
                 label: 'Prix (€)',
@@ -286,9 +292,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   FilteringTextInputFormatter.digitsOnly,
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Catégorie
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,9 +339,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // État
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,9 +386,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Tags
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,9 +455,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Échange possible
               SwitchListTile(
                 title: const Text('Échange possible'),
@@ -465,9 +471,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   });
                 },
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Bouton de validation
               GeartedButton(
                 label: 'Publier l\'annonce',
@@ -476,7 +482,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 fullWidth: true,
                 type: GeartedButtonType.accent,
               ),
-              
+
               const SizedBox(height: 32),
             ],
           ),

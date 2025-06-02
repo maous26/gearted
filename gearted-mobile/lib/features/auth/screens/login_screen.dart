@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
+import '../../../config/oauth_config.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
 import '../../../services/auth_service.dart';
@@ -43,7 +44,8 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailError = 'L\'email est requis';
       });
       isValid = false;
-    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text)) {
+    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+        .hasMatch(_emailController.text)) {
       setState(() {
         _emailError = 'Email invalide';
       });
@@ -88,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text,
       );
-      
+
       if (context.mounted) {
         context.go('/home');
       }
@@ -116,17 +118,36 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      if (!OAuthConfig.isGoogleConfigured) {
+        throw Exception(
+            'Configuration Google manquante. Veuillez configurer les identifiants Google dans le fichier .env');
+      }
+
       final result = await _authService.signInWithGoogle();
-      
+
       if (result != null && context.mounted) {
         context.go('/home');
       }
     } catch (e) {
       if (context.mounted) {
+        // Show a more descriptive error
+        String errorMessage = 'Erreur de connexion Google';
+        if (e.toString().contains('configuration') ||
+            e.toString().contains('.env')) {
+          errorMessage =
+              'Configuration OAuth incomplète. Contactez le support technique.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur de connexion Google: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Détails',
+              onPressed: () =>
+                  _showErrorDialog('Erreur Google OAuth', e.toString()),
+              textColor: Colors.white,
+            ),
           ),
         );
       }
@@ -145,17 +166,36 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      if (!OAuthConfig.isFacebookConfigured) {
+        throw Exception(
+            'Configuration Facebook manquante. Veuillez configurer les identifiants Facebook dans le fichier .env');
+      }
+
       final result = await _authService.signInWithFacebook();
-      
+
       if (result != null && context.mounted) {
         context.go('/home');
       }
     } catch (e) {
       if (context.mounted) {
+        // Show a more descriptive error
+        String errorMessage = 'Erreur de connexion Facebook';
+        if (e.toString().contains('configuration') ||
+            e.toString().contains('.env')) {
+          errorMessage =
+              'Configuration OAuth incomplète. Contactez le support technique.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur de connexion Facebook: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Détails',
+              onPressed: () =>
+                  _showErrorDialog('Erreur Facebook OAuth', e.toString()),
+              textColor: Colors.white,
+            ),
           ),
         );
       }
@@ -166,6 +206,28 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: Text(message),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Fermer'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -179,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 40),
-                
+
                 // Logo
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -211,9 +273,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Titre
                 const Text(
                   'Connectez-vous à votre compte',
@@ -223,9 +285,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Formulaire
                 GeartedTextField(
                   label: 'Email',
@@ -235,22 +297,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   prefixIcon: Icons.email_outlined,
                   errorText: _emailError,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 GeartedTextField(
                   label: 'Mot de passe',
                   hint: 'Entrez votre mot de passe',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   prefixIcon: Icons.lock_outline,
-                  suffixIcon: _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  suffixIcon: _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   onSuffixIconTap: _togglePasswordVisibility,
                   errorText: _passwordError,
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 // Mot de passe oublié
                 Align(
                   alignment: Alignment.centerRight,
@@ -265,9 +329,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Bouton de connexion
                 GeartedButton(
                   label: 'Se connecter',
@@ -275,9 +339,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   isLoading: _isLoading,
                   fullWidth: true,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Séparateur
                 Row(
                   children: [
@@ -302,9 +366,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Boutons de connexion sociale
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -325,9 +389,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Lien d'inscription
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

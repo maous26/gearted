@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
+import '../../../config/oauth_config.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
 import '../../../services/auth_service.dart';
@@ -18,12 +19,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
-  
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _acceptTerms = false;
   bool _isLoading = false;
-  
+
   String? _usernameError;
   String? _emailError;
   String? _passwordError;
@@ -62,7 +63,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       isValid = false;
     } else if (_usernameController.text.trim().length < 3) {
       setState(() {
-        _usernameError = 'Le nom d\'utilisateur doit contenir au moins 3 caractères';
+        _usernameError =
+            'Le nom d\'utilisateur doit contenir au moins 3 caractères';
       });
       isValid = false;
     } else {
@@ -77,7 +79,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _emailError = 'L\'email est requis';
       });
       isValid = false;
-    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text)) {
+    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+        .hasMatch(_emailController.text)) {
       setState(() {
         _emailError = 'Email invalide';
       });
@@ -152,7 +155,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _emailController.text.trim(),
         _passwordController.text,
       );
-      
+
       if (context.mounted) {
         context.go('/home');
       }
@@ -180,17 +183,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      if (!OAuthConfig.isGoogleConfigured) {
+        throw Exception(
+            'Configuration Google manquante. Veuillez configurer les identifiants Google dans le fichier .env');
+      }
+
       final result = await _authService.signInWithGoogle();
-      
+
       if (result != null && context.mounted) {
         context.go('/home');
       }
     } catch (e) {
       if (context.mounted) {
+        // Show a more descriptive error
+        String errorMessage = 'Erreur d\'inscription Google';
+        if (e.toString().contains('configuration') ||
+            e.toString().contains('.env')) {
+          errorMessage =
+              'Configuration OAuth incomplète. Contactez le support technique.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur d\'inscription Google: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Détails',
+              onPressed: () =>
+                  _showErrorDialog('Erreur Google OAuth', e.toString()),
+              textColor: Colors.white,
+            ),
           ),
         );
       }
@@ -209,17 +231,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      if (!OAuthConfig.isFacebookConfigured) {
+        throw Exception(
+            'Configuration Facebook manquante. Veuillez configurer les identifiants Facebook dans le fichier .env');
+      }
+
       final result = await _authService.signInWithFacebook();
-      
+
       if (result != null && context.mounted) {
         context.go('/home');
       }
     } catch (e) {
       if (context.mounted) {
+        // Show a more descriptive error
+        String errorMessage = 'Erreur d\'inscription Facebook';
+        if (e.toString().contains('configuration') ||
+            e.toString().contains('.env')) {
+          errorMessage =
+              'Configuration OAuth incomplète. Contactez le support technique.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur d\'inscription Facebook: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Détails',
+              onPressed: () =>
+                  _showErrorDialog('Erreur Facebook OAuth', e.toString()),
+              textColor: Colors.white,
+            ),
           ),
         );
       }
@@ -230,6 +271,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       }
     }
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: Text(message),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Fermer'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -257,9 +320,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 Text(
                   'Rejoignez la communauté Gearted et commencez à échanger votre équipement Airsoft.',
                   style: TextStyle(
@@ -267,9 +330,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: Colors.grey.shade600,
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Formulaire
                 GeartedTextField(
                   label: 'Nom d\'utilisateur',
@@ -278,9 +341,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   prefixIcon: Icons.person_outline,
                   errorText: _usernameError,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 GeartedTextField(
                   label: 'Email',
                   hint: 'Entrez votre email',
@@ -289,35 +352,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   prefixIcon: Icons.email_outlined,
                   errorText: _emailError,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 GeartedTextField(
                   label: 'Mot de passe',
                   hint: 'Créez un mot de passe',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   prefixIcon: Icons.lock_outline,
-                  suffixIcon: _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  suffixIcon: _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   onSuffixIconTap: _togglePasswordVisibility,
                   errorText: _passwordError,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 GeartedTextField(
                   label: 'Confirmer le mot de passe',
                   hint: 'Confirmez votre mot de passe',
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   prefixIcon: Icons.lock_outline,
-                  suffixIcon: _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  suffixIcon: _obscureConfirmPassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   onSuffixIconTap: _toggleConfirmPasswordVisibility,
                   errorText: _confirmPasswordError,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Termes et conditions
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,9 +450,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Bouton d'inscription
                 GeartedButton(
                   label: 'S\'inscrire',
@@ -393,9 +460,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   isLoading: _isLoading,
                   fullWidth: true,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Séparateur
                 Row(
                   children: [
@@ -420,9 +487,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Boutons d'inscription sociale
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -438,9 +505,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Lien de connexion
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

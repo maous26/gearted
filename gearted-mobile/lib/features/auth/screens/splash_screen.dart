@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/theme.dart';
+import '../../../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -46,11 +48,47 @@ class _SplashScreenState extends State<SplashScreen>
   void _startAnimationAndNavigation() async {
     _animationController.forward();
 
-    // Wait for animation to complete, then navigate
+    // Wait for animation to complete, then check authentication
     await Future.delayed(const Duration(milliseconds: 3000));
 
     if (mounted) {
-      context.go('/home');
+      try {
+        final authService = AuthService();
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+
+        print('SplashScreen: Checking authentication status...');
+
+        if (token != null) {
+          // Only log token prefix for security
+          print('SplashScreen: Found token: ${token.substring(0, 10)}...');
+
+          // User has a token, try to validate it
+          final isLoggedIn = await authService.isLoggedIn();
+          print('SplashScreen: isLoggedIn result: $isLoggedIn');
+
+          if (isLoggedIn) {
+            print('SplashScreen: User authenticated, navigating to home');
+            context.go('/home');
+          } else {
+            print('SplashScreen: Token invalid, navigating to login');
+            context.go('/login');
+          }
+        } else {
+          // No token, go to login
+          print('SplashScreen: No token found, navigating to login');
+          context.go('/login');
+        }
+      } catch (e) {
+        // If authentication check fails, go to login
+        print('SplashScreen: Auth check error: $e');
+
+        // Force token clear to ensure a clean slate
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('auth_token');
+
+        context.go('/login');
+      }
     }
   }
 
