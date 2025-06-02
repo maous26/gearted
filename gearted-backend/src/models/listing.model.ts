@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import AirsoftCategories from '../constants/airsoft-categories';
 
 export enum ListingCondition {
   NEW = 'new',
@@ -59,6 +60,12 @@ const listingSchema = new Schema<IListing>(
       type: String,
       required: [true, 'La catégorie est requise'],
       trim: true,
+      validate: {
+        validator: function(value: string) {
+          return AirsoftCategories.isValidCategory(value);
+        },
+        message: 'Catégorie non valide. Veuillez choisir une catégorie valide.'
+      }
     },
     tags: {
       type: [String],

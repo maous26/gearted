@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/airsoft_categories.dart';
 
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});
@@ -18,7 +19,7 @@ class _MyListingsScreenState extends State<MyListingsScreen>
       'title': 'M4A1 Électrique G&G Combat Machine',
       'price': 180,
       'images': ['https://example.com/m4a1.jpg'],
-      'category': 'Répliques électriques',
+      'category': AirsoftCategories.repliqueLongueAEG,
       'views': 45,
       'favorites': 8,
       'status': 'active',
@@ -29,7 +30,7 @@ class _MyListingsScreenState extends State<MyListingsScreen>
       'title': 'Gilet tactique Viper avec plaques',
       'price': 120,
       'images': ['https://example.com/vest.jpg'],
-      'category': 'Équipements tactiques',
+      'category': AirsoftCategories.giletsTactiques,
       'views': 32,
       'favorites': 5,
       'status': 'active',
@@ -44,7 +45,7 @@ class _MyListingsScreenState extends State<MyListingsScreen>
       'price': 65,
       'soldPrice': 60,
       'images': ['https://example.com/scope.jpg'],
-      'category': 'Optiques',
+      'category': AirsoftCategories.organesVisee,
       'status': 'sold',
       'soldAt': '2025-05-28T16:20:00Z',
     },

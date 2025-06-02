@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_card.dart';
 import '../../../widgets/common/animations.dart';
+import '../../../widgets/common/category_display_widget.dart';
+import '../../../widgets/equipment/equipment_category_widget.dart';
 import '../../../services/listings_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -193,84 +195,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Catégories
                     Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Catégories',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () => context.push('/search'),
-                                child: const Text('Voir tout'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 100,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: [
-                                AnimatedListItem(
-                                  index: 0,
-                                  delay: const Duration(milliseconds: 100),
-                                  child: _buildCategoryItem(
-                                    Icons.sports_motorsports,
-                                    'Répliques',
-                                  ),
-                                ),
-                                AnimatedListItem(
-                                  index: 1,
-                                  delay: const Duration(milliseconds: 100),
-                                  child: _buildCategoryItem(
-                                    Icons.settings,
-                                    'Gearbox',
-                                  ),
-                                ),
-                                AnimatedListItem(
-                                  index: 2,
-                                  delay: const Duration(milliseconds: 100),
-                                  child: _buildCategoryItem(
-                                    Icons.visibility,
-                                    'Optiques',
-                                  ),
-                                ),
-                                AnimatedListItem(
-                                  index: 3,
-                                  delay: const Duration(milliseconds: 100),
-                                  child: _buildCategoryItem(
-                                    Icons.battery_charging_full,
-                                    'Batteries',
-                                  ),
-                                ),
-                                AnimatedListItem(
-                                  index: 4,
-                                  delay: const Duration(milliseconds: 100),
-                                  child: _buildCategoryItem(
-                                    Icons.checkroom,
-                                    'Tenues',
-                                  ),
-                                ),
-                                AnimatedListItem(
-                                  index: 5,
-                                  delay: const Duration(milliseconds: 100),
-                                  child: _buildCategoryItem(
-                                    Icons.build,
-                                    'Accessoires',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: const CategoryDisplayWidget(),
+                    ),
+
+                    // Equipment Category Section
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: const EquipmentCategoryWidget(),
                     ),
 
                     // Section Hot Deals
@@ -515,44 +446,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryItem(IconData icon, String title) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to search with category filter
-        context.push('/search?category=${Uri.encodeComponent(title)}');
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 16),
-        child: Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: GeartedTheme.lightBlue.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: GeartedTheme.primaryBlue,
-                size: 30,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }

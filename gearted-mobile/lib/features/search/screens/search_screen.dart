@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/airsoft_categories.dart';
+import '../../../widgets/search/equipment_search_suggestions.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? category;
@@ -20,6 +22,52 @@ class _SearchScreenState extends State<SearchScreen> {
     'Tactical vest'
   ];
   List<String> _searchResults = [];
+  String? _selectedQuickFilter;
+
+  // Equipment-focused quick filters
+  final List<Map<String, dynamic>> _equipmentQuickFilters = [
+    {
+      'label': 'Équipement protection',
+      'icon': Icons.security,
+      'categories': [
+        AirsoftCategories.masques,
+        AirsoftCategories.giletsTactiques,
+        AirsoftCategories.casques,
+        AirsoftCategories.lunettesProtection,
+      ],
+      'color': Colors.red,
+    },
+    {
+      'label': 'Répliques',
+      'icon': Icons.sports_motorsports,
+      'categories': [
+        AirsoftCategories.repliqueLongueAEG,
+        AirsoftCategories.repliquePoingGaz,
+        AirsoftCategories.repliqueLongueGBB,
+      ],
+      'color': Colors.blue,
+    },
+    {
+      'label': 'Accessoires',
+      'icon': Icons.build,
+      'categories': [
+        AirsoftCategories.organesVisee,
+        AirsoftCategories.chargeurs,
+        AirsoftCategories.lampesTactiques,
+      ],
+      'color': Colors.green,
+    },
+    {
+      'label': 'Upgrades',
+      'icon': Icons.precision_manufacturing,
+      'categories': [
+        AirsoftCategories.gearbox,
+        AirsoftCategories.canonPrecision,
+        AirsoftCategories.hopUpJoints,
+      ],
+      'color': Colors.orange,
+    },
+  ];
 
   @override
   void initState() {
@@ -45,19 +93,11 @@ class _SearchScreenState extends State<SearchScreen> {
       _isSearching = true;
     });
 
-    // Simulate search with mock data
+    // Enhanced search with equipment focus
     Future.delayed(const Duration(milliseconds: 800), () {
       setState(() {
         _isSearching = false;
-        _searchResults = [
-          'M4A1 Daniel Defense MK18',
-          'Gearbox V2 complète SHS',
-          'Red dot Aimpoint T1 replica',
-          'M4 SOPMOD Block II',
-          'Gearbox V3 upgrade',
-        ]
-            .where((item) => item.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        _searchResults = _getEnhancedSearchResults(query);
 
         // Add to recent searches if not already there
         if (!_recentSearches.contains(query)) {
@@ -67,6 +107,45 @@ class _SearchScreenState extends State<SearchScreen> {
           }
         }
       });
+    });
+  }
+
+  List<String> _getEnhancedSearchResults(String query) {
+    final baseResults = [
+      'M4A1 Daniel Defense MK18',
+      'Gearbox V2 complète SHS',
+      'Red dot Aimpoint T1 replica',
+      'M4 SOPMOD Block II',
+      'Gearbox V3 upgrade',
+      'Gilet tactique Viper',
+      'Masque Dye I5',
+      'Casque FAST maritime',
+      'Lunettes ESS Crossbow',
+      'Glock 17 GBB',
+      'Chargeur PMAG 120 billes',
+      'Silencieux M4 14mm',
+      'Canon précision 6.03mm',
+      'Hop-up Maple Leaf',
+    ];
+
+    return baseResults
+        .where((item) => item.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+  }
+
+  void _applyQuickFilter(Map<String, dynamic> filter) {
+    setState(() {
+      _selectedQuickFilter = filter['label'];
+      _searchController.text = filter['label'];
+      _performSearch(filter['label']);
+    });
+  }
+
+  void _clearQuickFilter() {
+    setState(() {
+      _selectedQuickFilter = null;
+      _searchController.clear();
+      _searchResults.clear();
     });
   }
 
@@ -123,19 +202,29 @@ class _SearchScreenState extends State<SearchScreen> {
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Rechercher du matériel Airsoft...',
+                hintText: 'Rechercher équipement Airsoft...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_selectedQuickFilter != null)
+                      IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: _clearQuickFilter,
+                        tooltip: 'Effacer le filtre',
+                      ),
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
                         onPressed: () {
                           _searchController.clear();
                           setState(() {
                             _searchResults.clear();
                           });
                         },
-                      )
-                    : null,
+                      ),
+                  ],
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -147,7 +236,104 @@ class _SearchScreenState extends State<SearchScreen> {
               },
               onSubmitted: _performSearch,
             ),
-            const SizedBox(height: 20),
+            
+            const SizedBox(height: 16),
+
+            // Equipment Quick Filters
+            if (_selectedQuickFilter == null) ...[
+              const Text(
+                'Recherche rapide par catégorie',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _equipmentQuickFilters.length,
+                  itemBuilder: (context, index) {
+                    final filter = _equipmentQuickFilters[index];
+                    return Container(
+                      width: 120,
+                      margin: const EdgeInsets.only(right: 12),
+                      child: Material(
+                        borderRadius: BorderRadius.circular(12),
+                        color: filter['color'].withOpacity(0.1),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _applyQuickFilter(filter),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  filter['icon'],
+                                  color: filter['color'],
+                                  size: 28,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  filter['label'],
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: filter['color'],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ] else ...[
+              // Active filter indicator
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.filter_alt,
+                      color: Colors.blue.shade700,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Filtre: $_selectedQuickFilter',
+                      style: TextStyle(
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: _clearQuickFilter,
+                      child: Icon(
+                        Icons.close,
+                        color: Colors.blue.shade700,
+                        size: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Content based on search state
             Expanded(
@@ -157,7 +343,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     )
                   : _searchResults.isNotEmpty
                       ? _buildSearchResults()
-                      : _buildRecentSearches(),
+                      : _buildSearchSuggestions(),
             ),
           ],
         ),
@@ -165,63 +351,54 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildRecentSearches() {
+  Widget _buildSearchSuggestions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Recherches récentes',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+        if (_recentSearches.isNotEmpty) ...[
+          const Text(
+            'Recherches récentes',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...List.generate(_recentSearches.length, (index) {
+            final search = _recentSearches[index];
+            return ListTile(
+              leading: const Icon(Icons.history, color: Colors.grey),
+              title: Text(search),
+              trailing: IconButton(
+                icon: const Icon(Icons.clear, size: 18),
+                onPressed: () {
+                  setState(() {
+                    _recentSearches.removeAt(index);
+                  });
+                },
+              ),
+              onTap: () {
+                _searchController.text = search;
+                _performSearch(search);
+              },
+            );
+          }),
+          const SizedBox(height: 24),
+        ],
+        
+        // Equipment search suggestions
+        Expanded(
+          child: EquipmentSearchSuggestions(
+            query: _searchController.text,
+            onSuggestionTap: (suggestion) {
+              _searchController.text = suggestion;
+              _performSearch(suggestion);
+            },
+            onEquipmentFilterTap: () {
+              context.push('/advanced-search');
+            },
           ),
         ),
-        const SizedBox(height: 16),
-        if (_recentSearches.isEmpty)
-          Center(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.search,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Aucune recherche récente',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          Expanded(
-            child: ListView.builder(
-              itemCount: _recentSearches.length,
-              itemBuilder: (context, index) {
-                final search = _recentSearches[index];
-                return ListTile(
-                  leading: const Icon(Icons.history),
-                  title: Text(search),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      setState(() {
-                        _recentSearches.removeAt(index);
-                      });
-                    },
-                  ),
-                  onTap: () {
-                    _searchController.text = search;
-                    _performSearch(search);
-                  },
-                );
-              },
-            ),
-          ),
       ],
     );
   }
@@ -230,12 +407,22 @@ class _SearchScreenState extends State<SearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${_searchResults.length} résultats trouvés',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${_searchResults.length} résultats trouvés',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => context.push('/advanced-search'),
+              icon: const Icon(Icons.tune, size: 16),
+              label: const Text('Affiner'),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Expanded(
@@ -243,19 +430,54 @@ class _SearchScreenState extends State<SearchScreen> {
             itemCount: _searchResults.length,
             itemBuilder: (context, index) {
               final result = _searchResults[index];
+              final isEquipment = _isEquipmentItem(result);
+              
               return Card(
+                margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   leading: Container(
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: isEquipment 
+                          ? Colors.red.shade100 
+                          : Colors.grey[300],
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.image),
+                    child: Icon(
+                      isEquipment ? Icons.security : Icons.image,
+                      color: isEquipment 
+                          ? Colors.red.shade600 
+                          : Colors.grey,
+                    ),
                   ),
                   title: Text(result),
-                  subtitle: Text('À partir de ${(50 + index * 25)}€'),
+                  subtitle: Row(
+                    children: [
+                      Text('À partir de ${(50 + index * 25)}€'),
+                      if (isEquipment) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6, 
+                            vertical: 2
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'ÉQUIPEMENT',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   trailing: const Icon(Icons.favorite_border),
                   onTap: () {
                     // TODO: Navigate to item details
@@ -266,6 +488,17 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  bool _isEquipmentItem(String itemName) {
+    final equipmentKeywords = [
+      'gilet', 'masque', 'casque', 'lunettes', 'protection',
+      'tactique', 'vest', 'helmet', 'goggle', 'chest'
+    ];
+    
+    return equipmentKeywords.any(
+      (keyword) => itemName.toLowerCase().contains(keyword)
     );
   }
 }

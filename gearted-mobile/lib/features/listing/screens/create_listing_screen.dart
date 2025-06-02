@@ -6,7 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
+import '../../../widgets/common/category_selector.dart';
 import '../../../services/listings_service.dart';
+import '../../../core/constants/airsoft_categories.dart';
 
 class CreateListingScreen extends StatefulWidget {
   const CreateListingScreen({super.key});
@@ -21,24 +23,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
 
-  String _selectedCategory = 'Répliques';
+  String? _selectedCategory;
   String _selectedCondition = 'Très bon état';
   bool _isExchangeable = false;
   List<String> _tags = [];
   List<String> _imageUrls = [];
   bool _isLoading = false;
-
-  // Options pour les dropdowns
-  final List<String> _categories = [
-    'Répliques',
-    'Gearbox',
-    'Optiques',
-    'Batteries',
-    'Chargeurs',
-    'Silencieux',
-    'Tenues',
-    'Accessoires',
-  ];
 
   final List<String> _conditions = [
     'Neuf',
@@ -146,6 +136,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez sélectionner une catégorie'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -416,36 +416,63 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.grey.shade300,
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedCategory,
-                        isExpanded: true,
-                        hint: const Text('Sélectionnez une catégorie'),
-                        items: _categories.map((category) {
-                          return DropdownMenuItem<String>(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedCategory = value;
-                            });
-                          }
+                  GestureDetector(
+                    onTap: () {
+                      showCategorySelector(
+                        context,
+                        selectedCategory: _selectedCategory,
+                        onCategorySelected: (category) {
+                          setState(() {
+                            _selectedCategory = category;
+                          });
                         },
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _selectedCategory ?? 'Sélectionnez une catégorie',
+                              style: TextStyle(
+                                color: _selectedCategory != null 
+                                    ? Colors.black87 
+                                    : Colors.grey.shade600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.grey.shade600,
+                          ),
+                        ],
                       ),
                     ),
                   ),
+                  if (_selectedCategory != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      AirsoftCategories.isMainCategory(_selectedCategory!) 
+                          ? 'Catégorie principale' 
+                          : 'Sous-catégorie de ${AirsoftCategories.getMainCategory(_selectedCategory!) ?? "Non spécifiée"}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ],
               ),
 

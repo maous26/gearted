@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/airsoft_categories.dart';
 
 class AdvancedSearchScreen extends StatefulWidget {
   const AdvancedSearchScreen({super.key});
@@ -17,18 +18,10 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   String? _selectedLocation;
   String _sortBy = 'recent';
   bool _priceNegotiable = false;
+  bool _equipmentOnly = false;
+  Set<String> _selectedEquipmentTypes = {};
 
-  final List<String> _categories = [
-    'Répliques électriques',
-    'Répliques à gaz',
-    'Répliques à ressort',
-    'Équipements tactiques',
-    'Optiques',
-    'Accessoires',
-    'Pièces détachées',
-    'Vêtements',
-    'Protection',
-  ];
+  final List<String> _categories = AirsoftCategories.allCategories;
 
   final List<String> _conditions = [
     'Neuf',
@@ -55,6 +48,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     'price_desc',
     'distance',
     'popularity',
+    'equipment_priority', // New sort option for equipment
   ];
 
   final Map<String, String> _sortLabels = {
@@ -63,7 +57,54 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     'price_desc': 'Prix décroissant',
     'distance': 'Distance',
     'popularity': 'Popularité',
+    'equipment_priority': 'Équipement en priorité',
   };
+
+  // Equipment-specific filter options
+  final List<Map<String, dynamic>> _equipmentTypes = [
+    {
+      'label': 'Protection corporelle',
+      'key': 'body_protection',
+      'categories': [
+        AirsoftCategories.giletsTactiques,
+        AirsoftCategories.portePlaques,
+      ],
+      'icon': Icons.security,
+    },
+    {
+      'label': 'Protection visage',
+      'key': 'face_protection',
+      'categories': [
+        AirsoftCategories.masques,
+        AirsoftCategories.lunettesProtection,
+      ],
+      'icon': Icons.face,
+    },
+    {
+      'label': 'Protection tête',
+      'key': 'head_protection',
+      'categories': [
+        AirsoftCategories.casques,
+      ],
+      'icon': Icons.sports_kabaddi,
+    },
+    {
+      'label': 'Protection mains',
+      'key': 'hand_protection',
+      'categories': [
+        AirsoftCategories.gants,
+      ],
+      'icon': Icons.back_hand,
+    },
+    {
+      'label': 'Protection articulations',
+      'key': 'joint_protection',
+      'categories': [
+        AirsoftCategories.genouilleres,
+      ],
+      'icon': Icons.accessibility,
+    },
+  ];
 
   void _resetFilters() {
     setState(() {
@@ -75,6 +116,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       _selectedLocation = null;
       _sortBy = 'recent';
       _priceNegotiable = false;
+      _equipmentOnly = false;
+      _selectedEquipmentTypes.clear();
     });
   }
 
@@ -82,11 +125,32 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     // TODO: Implement search with filters
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Recherche avec filtres appliquée'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(_buildFilterSummary()),
+        duration: const Duration(seconds: 3),
       ),
     );
+  }
+
+  String _buildFilterSummary() {
+    List<String> activeFilters = [];
+    
+    if (_searchController.text.isNotEmpty) {
+      activeFilters.add('Recherche: "${_searchController.text}"');
+    }
+    if (_selectedCategory != null) {
+      activeFilters.add('Catégorie: ${AirsoftCategories.getCleanCategoryName(_selectedCategory!)}');
+    }
+    if (_equipmentOnly) {
+      activeFilters.add('Équipement uniquement');
+    }
+    if (_selectedEquipmentTypes.isNotEmpty) {
+      activeFilters.add('Types: ${_selectedEquipmentTypes.length} sélectionnés');
+    }
+    
+    return activeFilters.isEmpty 
+        ? 'Recherche avec filtres appliquée'
+        : 'Filtres actifs: ${activeFilters.join(', ')}';
   }
 
   Widget _buildFilterSection(String title, Widget child) {
@@ -131,6 +195,92 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     );
   }
 
+  Widget _buildEquipmentFilters() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Equipment only toggle
+        Container(
+          decoration: BoxDecoration(
+            color: _equipmentOnly ? Colors.red.shade50 : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _equipmentOnly ? Colors.red.shade300 : Colors.grey.shade300,
+            ),
+          ),
+          child: SwitchListTile(
+            title: const Text(
+              'Équipement de protection uniquement',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text('Filtrer uniquement les articles d\'équipement'),
+            value: _equipmentOnly,
+            activeColor: Colors.red.shade600,
+            onChanged: (value) {
+              setState(() {
+                _equipmentOnly = value;
+                if (!value) {
+                  _selectedEquipmentTypes.clear();
+                }
+              });
+            },
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          ),
+        ),
+        
+        if (_equipmentOnly) ...[
+          const SizedBox(height: 16),
+          const Text(
+            'Types d\'équipement',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _equipmentTypes.map((type) {
+              final isSelected = _selectedEquipmentTypes.contains(type['key']);
+              return FilterChip(
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      type['icon'],
+                      size: 16,
+                      color: isSelected ? Colors.white : Colors.red.shade600,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(type['label']),
+                  ],
+                ),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedEquipmentTypes.add(type['key']);
+                    } else {
+                      _selectedEquipmentTypes.remove(type['key']);
+                    }
+                  });
+                },
+                selectedColor: Colors.red.shade600,
+                backgroundColor: Colors.white,
+                side: BorderSide(color: Colors.red.shade300),
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : Colors.red.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -164,6 +314,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
               ),
             ),
 
+            // Equipment-specific filters
+            _buildFilterSection(
+              'Filtres équipement',
+              _buildEquipmentFilters(),
+            ),
+
             // Category
             _buildFilterSection(
               'Catégorie',
@@ -172,6 +328,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                 value: _selectedCategory,
                 items: _categories,
                 onChanged: (value) => setState(() => _selectedCategory = value),
+                itemBuilder: (category) => AirsoftCategories.getCleanCategoryName(category),
               ),
             ),
 
@@ -275,6 +432,10 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: _applyFilters,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                  ),
                   child: const Text('Appliquer'),
                 ),
               ),

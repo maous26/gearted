@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import Listing, { ListingCondition } from '../models/listing.model';
 import { logger } from '../utils/logger';
+import analyticsService from '../services/analytics.service';
+import AirsoftCategories from '../constants/airsoft-categories';
 
 // Obtenir toutes les annonces avec pagination et filtrage
 export const getListings = async (req: Request, res: Response, next: NextFunction) => {
@@ -70,6 +72,25 @@ export const getListings = async (req: Request, res: Response, next: NextFunctio
     // Compter le nombre total d'annonces
     const total = await Listing.countDocuments(filter);
     
+    // Track search analytics if search parameters were used
+    const userId = (req as any).userId; // From auth middleware if available
+    if (search || category || minPrice || maxPrice) {
+      try {
+        await analyticsService.trackSearchPerformed({
+          query: search,
+          filters: {
+            category,
+            condition,
+            minPrice,
+            maxPrice,
+            isExchangeable
+          }
+        }, userId, listings);
+      } catch (error) {
+        logger.warn(`Failed to track search analytics: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
     res.status(200).json({
       success: true,
       count: listings.length,
@@ -140,6 +161,21 @@ export const createListing = async (req: Request, res: Response, next: NextFunct
     
     await listing.save();
     
+    // Track listing creation analytics
+    try {
+      await analyticsService.trackListingCreated({
+        category,
+        price,
+        images: imageUrls,
+        description,
+        condition,
+        tags,
+        isExchangeable
+      }, sellerId);
+    } catch (error) {
+      logger.warn(`Failed to track listing creation analytics: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
     res.status(201).json({
       success: true,
       listing,
