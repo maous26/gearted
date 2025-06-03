@@ -6,9 +6,10 @@ import 'package:image_picker/image_picker.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
-import '../../../widgets/common/category_selector.dart';
+import '../../../widgets/category/category_grid_widget.dart';
 import '../../../services/listings_service.dart';
-import '../../../core/constants/airsoft_categories.dart';
+import '../../../services/category_service.dart';
+import '../../../models/airsoft_category.dart';
 
 class CreateListingScreen extends StatefulWidget {
   const CreateListingScreen({super.key});
@@ -22,8 +23,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
+  final CategoryService _categoryService = CategoryService();
 
-  String? _selectedCategory;
+  AirsoftCategory? _selectedCategory;
   String _selectedCondition = 'Très bon état';
   bool _isExchangeable = false;
   List<String> _tags = [];
@@ -59,6 +61,72 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     setState(() {
       _tags.remove(tag);
     });
+  }
+
+  void _showCategorySelector() async {
+    final result = await showModalBottomSheet<AirsoftCategory>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Sélectionner une catégorie',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Oswald',
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CategoryGridWidget(
+                  onCategorySelected: (category) {
+                    Navigator.of(context).pop(category);
+                  },
+                  selectedCategoryId: _selectedCategory?.id,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedCategory = result;
+      });
+    }
   }
 
   void _addImage() async {
@@ -418,19 +486,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: () {
-                      showCategorySelector(
-                        context,
-                        selectedCategory: _selectedCategory,
-                        onCategorySelected: (category) {
-                          setState(() {
-                            _selectedCategory = category;
-                          });
-                        },
-                      );
+                      _showCategorySelector();
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 16),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(8),
@@ -443,10 +504,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              _selectedCategory ?? 'Sélectionnez une catégorie',
+                              _selectedCategory?.name ??
+                                  'Sélectionnez une catégorie',
                               style: TextStyle(
-                                color: _selectedCategory != null 
-                                    ? Colors.black87 
+                                color: _selectedCategory != null
+                                    ? Colors.black87
                                     : Colors.grey.shade600,
                                 fontSize: 16,
                               ),
@@ -463,9 +525,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   if (_selectedCategory != null) ...[
                     const SizedBox(height: 8),
                     Text(
-                      AirsoftCategories.isMainCategory(_selectedCategory!) 
-                          ? 'Catégorie principale' 
-                          : 'Sous-catégorie de ${AirsoftCategories.getMainCategory(_selectedCategory!) ?? "Non spécifiée"}',
+                      _selectedCategory!.parentId == null
+                          ? 'Catégorie principale'
+                          : 'Sous-catégorie de ${_selectedCategory!.parentId}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,

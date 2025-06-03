@@ -242,31 +242,33 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                // Logo
+                // Logo martial et nom de l'app
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.settings,
-                      size: 40,
-                      color: GeartedTheme.primaryBlue,
+                    // Logo militaire
+                    Image.asset(
+                      'assets/images/gearted_logo_military.png',
+                      width: 48,
+                      height: 48,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     RichText(
                       text: TextSpan(
                         style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Montserrat',
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'Oswald',
+                          letterSpacing: 2,
                         ),
                         children: [
                           TextSpan(
-                            text: 'Gear',
-                            style: TextStyle(color: GeartedTheme.primaryBlue),
+                            text: 'GEAR',
+                            style: TextStyle(color: GeartedTheme.battleRed),
                           ),
                           TextSpan(
-                            text: 'ted',
-                            style: TextStyle(color: GeartedTheme.lightBlue),
+                            text: 'TED',
+                            style: TextStyle(color: GeartedTheme.victoryGold),
                           ),
                         ],
                       ),
@@ -282,6 +284,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Oswald',
+                    letterSpacing: 1.1,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -323,8 +327,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       'Mot de passe oublié?',
                       style: TextStyle(
-                        color: GeartedTheme.primaryBlue,
-                        fontWeight: FontWeight.w500,
+                        color: GeartedTheme.battleRed,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Oswald',
+                        letterSpacing: 1.2,
                       ),
                     ),
                   ),
@@ -396,7 +402,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Pas encore de compte?'),
+                    const Text(
+                      'Pas encore de compte?',
+                      style: TextStyle(
+                        fontFamily: 'Oswald',
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
                     TextButton(
                       onPressed: () {
                         context.go('/register');
@@ -404,8 +417,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'S\'inscrire',
                         style: TextStyle(
-                          color: GeartedTheme.primaryBlue,
-                          fontWeight: FontWeight.w600,
+                          color: GeartedTheme.battleRed,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Oswald',
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ),

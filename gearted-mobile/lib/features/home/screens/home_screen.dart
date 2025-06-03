@@ -84,9 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GeartedTheme.militaryBlack,
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: GeartedTheme.militaryBlack,
+        backgroundColor: Colors.white,
         elevation: 4,
         title: Row(
           children: [
@@ -95,12 +95,12 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 44,
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                color: GeartedTheme.militaryBlack,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: GeartedTheme.victoryGold, width: 2.5),
+                border: Border.all(color: Colors.blue.shade600, width: 2.5),
                 boxShadow: [
                   BoxShadow(
-                    color: GeartedTheme.battleRed.withOpacity(0.5),
+                    color: Colors.blue.withOpacity(0.3),
                     blurRadius: 10,
                     spreadRadius: 3,
                     offset: const Offset(0, 3),
@@ -123,14 +123,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.w900,
                 fontSize: 22,
                 letterSpacing: 2,
-                color: Colors.white,
+                color: Colors.grey.shade800,
               ),
             ),
             Text(
               'TED',
               style: GoogleFonts.oswald(
                 fontWeight: FontWeight.w900,
-                color: GeartedTheme.victoryGold,
+                color: Colors.blue.shade600,
                 fontSize: 22,
                 letterSpacing: 2,
               ),
@@ -140,12 +140,12 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.military_tech,
-                color: GeartedTheme.victoryGold, size: 28),
+                color: Colors.blue.shade600, size: 28),
             onPressed: () => context.push('/notifications'),
             tooltip: 'Notifications',
           ),
           IconButton(
-            icon: Icon(Icons.shield, color: GeartedTheme.battleRed, size: 28),
+            icon: Icon(Icons.shield, color: Colors.red.shade600, size: 28),
             onPressed: () => context.push('/favorites'),
             tooltip: 'Favoris',
           ),
@@ -154,20 +154,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              GeartedTheme.militaryBlack,
-              GeartedTheme.combatGreen.withOpacity(0.85)
-            ],
+            colors: [Colors.grey.shade50, Colors.grey.shade100],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-          ),
-          image: DecorationImage(
-            image: AssetImage('assets/images/camo_pattern.png'),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.10),
-              BlendMode.darken,
-            ),
           ),
         ),
         child: RefreshIndicator(
@@ -180,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       // SEARCH BAR
                       Container(
-                        color: GeartedTheme.militaryBlack,
+                        color: Colors.white,
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         child: GestureDetector(
                           onTap: () => context.push('/search'),
@@ -188,23 +177,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             height: 48,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color:
-                                    GeartedTheme.victoryGold.withOpacity(0.3),
+                                color: Colors.grey.shade300,
                               ),
                             ),
                             child: Row(
                               children: [
                                 Icon(Icons.search,
-                                    color: GeartedTheme.victoryGold, size: 22),
+                                    color: Colors.grey.shade600, size: 22),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     'RECHERCHER UNE PIÈCE, UNE MARQUE...',
                                     style: GoogleFonts.oswald(
-                                      color: Colors.white.withOpacity(0.85),
+                                      color: Colors.grey.shade600,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 1.2,
@@ -241,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 14, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: GeartedTheme.militaryBlack,
+                                    color: Colors.white,
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(
                                         color: GeartedTheme.battleRed,
@@ -288,23 +276,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               margin: const EdgeInsets.only(top: 10),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: GeartedTheme.militaryBlack
-                                    .withOpacity(0.92),
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color:
-                                      GeartedTheme.battleRed.withOpacity(0.4),
-                                  width: 2,
+                                  color: Colors.grey.shade300,
+                                  width: 1,
                                 ),
-                                image: DecorationImage(
-                                  image: AssetImage(
-                                      'assets/images/grunge_overlay.png'),
-                                  fit: BoxFit.cover,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black.withOpacity(0.08),
-                                    BlendMode.darken,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
                                   ),
-                                ),
+                                ],
                               ),
                               child: Column(
                                 children: [
@@ -376,40 +360,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           const EdgeInsets.only(
                                                               right: 12),
                                                       decoration: BoxDecoration(
-                                                        color: GeartedTheme
-                                                            .militaryBlack
-                                                            .withOpacity(0.98),
+                                                        color: Colors.white,
                                                         border: Border.all(
-                                                          color: GeartedTheme
-                                                              .battleRed
-                                                              .withOpacity(0.5),
-                                                          width: 2,
+                                                          color: Colors
+                                                              .grey.shade300,
+                                                          width: 1,
                                                         ),
                                                         borderRadius:
                                                             BorderRadius
                                                                 .circular(6),
                                                         boxShadow: [
                                                           BoxShadow(
-                                                            color: GeartedTheme
-                                                                .battleRed
+                                                            color: Colors.grey
                                                                 .withOpacity(
-                                                                    0.12),
-                                                            blurRadius: 6,
-                                                            spreadRadius: 1,
+                                                                    0.1),
+                                                            blurRadius: 4,
+                                                            offset:
+                                                                const Offset(
+                                                                    0, 2),
                                                           ),
                                                         ],
-                                                        image: DecorationImage(
-                                                          image: AssetImage(
-                                                              'assets/images/grunge_overlay.png'),
-                                                          fit: BoxFit.cover,
-                                                          colorFilter:
-                                                              ColorFilter.mode(
-                                                            Colors.black
-                                                                .withOpacity(
-                                                                    0.10),
-                                                            BlendMode.darken,
-                                                          ),
-                                                        ),
                                                       ),
                                                       child: GeartedItemCard(
                                                         title: (item['title']
@@ -488,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 14, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: GeartedTheme.militaryBlack,
+                                    color: Colors.white,
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(
                                         color: GeartedTheme.combatGreen,
@@ -535,23 +505,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               margin: const EdgeInsets.only(top: 10),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: GeartedTheme.militaryBlack
-                                    .withOpacity(0.92),
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color:
-                                      GeartedTheme.combatGreen.withOpacity(0.4),
-                                  width: 2,
+                                  color: Colors.grey.shade300,
+                                  width: 1,
                                 ),
-                                image: DecorationImage(
-                                  image: AssetImage(
-                                      'assets/images/grunge_overlay.png'),
-                                  fit: BoxFit.cover,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black.withOpacity(0.08),
-                                    BlendMode.darken,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
                                   ),
-                                ),
+                                ],
                               ),
                               child: Column(
                                 children: [
@@ -629,40 +595,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       milliseconds: 50),
                                                   child: Container(
                                                     decoration: BoxDecoration(
-                                                      color: GeartedTheme
-                                                          .militaryBlack
-                                                          .withOpacity(0.98),
+                                                      color: Colors.white,
                                                       border: Border.all(
-                                                        color: GeartedTheme
-                                                            .combatGreen
-                                                            .withOpacity(0.5),
-                                                        width: 2,
+                                                        color: Colors
+                                                            .grey.shade300,
+                                                        width: 1,
                                                       ),
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               6),
                                                       boxShadow: [
                                                         BoxShadow(
-                                                          color: GeartedTheme
-                                                              .combatGreen
-                                                              .withOpacity(
-                                                                  0.12),
-                                                          blurRadius: 6,
-                                                          spreadRadius: 1,
+                                                          color: Colors.grey
+                                                              .withOpacity(0.1),
+                                                          blurRadius: 4,
+                                                          offset: const Offset(
+                                                              0, 2),
                                                         ),
                                                       ],
-                                                      image: DecorationImage(
-                                                        image: AssetImage(
-                                                            'assets/images/grunge_overlay.png'),
-                                                        fit: BoxFit.cover,
-                                                        colorFilter:
-                                                            ColorFilter.mode(
-                                                          Colors.black
-                                                              .withOpacity(
-                                                                  0.10),
-                                                          BlendMode.darken,
-                                                        ),
-                                                      ),
                                                     ),
                                                     child: GeartedItemCard(
                                                       title: (item['title']

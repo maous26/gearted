@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../widgets/category/quick_category_grid.dart';
 import '../../../core/constants/categories_data.dart';
+import '../../../config/theme.dart';
 
 class HomeScreenRefactored extends StatelessWidget {
   const HomeScreenRefactored({super.key});
@@ -9,43 +10,67 @@ class HomeScreenRefactored extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       body: CustomScrollView(
         slivers: [
           // App Bar avec recherche
           SliverAppBar(
             floating: true,
             pinned: false,
-            backgroundColor: Theme.of(context).primaryColor,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.grey.shade800,
             title: Row(
               children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  height: 32,
-                  errorBuilder: (context, error, stackTrace) => 
-                    const Icon(Icons.sports_kabaddi, color: Colors.white),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: GeartedColors.primaryBlue.withOpacity(0.2),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(6),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.sports_kabaddi,
+                        color: GeartedColors.primaryBlue),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Gearted',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: GeartedColors.primaryBlue,
+                    fontSize: 18,
                   ),
                 ),
               ],
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.search, color: Colors.white),
+                icon: Icon(Icons.search, color: Colors.grey.shade700),
                 onPressed: () => context.push('/search'),
               ),
               IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                icon: Icon(Icons.notifications_outlined,
+                    color: Colors.grey.shade700),
                 onPressed: () => context.push('/notifications'),
               ),
             ],
           ),
-          
+
           // Contenu
           SliverList(
             delegate: SliverChildListDelegate([
@@ -105,7 +130,8 @@ class HomeScreenRefactored extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton(
-                            onPressed: () => context.push('/search?type=equipment'),
+                            onPressed: () =>
+                                context.push('/search?type=equipment'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.red,
@@ -125,7 +151,7 @@ class HomeScreenRefactored extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Statistiques rapides
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -135,7 +161,8 @@ class HomeScreenRefactored extends StatelessWidget {
                       child: _buildStatCard(
                         icon: Icons.shield,
                         title: 'Protection',
-                        subtitle: '${CategoriesData.equipmentCategories.length} catégories',
+                        subtitle:
+                            '${CategoriesData.equipmentCategories.length} catégories',
                         color: Colors.red,
                         onTap: () => context.push('/search?type=equipment'),
                       ),
@@ -155,7 +182,8 @@ class HomeScreenRefactored extends StatelessWidget {
                       child: _buildStatCard(
                         icon: Icons.star,
                         title: 'Populaires',
-                        subtitle: '${CategoriesData.popularCategories.length} catégories',
+                        subtitle:
+                            '${CategoriesData.popularCategories.length} catégories',
                         color: Colors.orange,
                         onTap: () => context.push('/search?popular=true'),
                       ),
@@ -165,7 +193,7 @@ class HomeScreenRefactored extends StatelessWidget {
               ),
 
               const SizedBox(height: 24),
-              
+
               // Grille de catégories
               const QuickCategoryGrid(),
 
@@ -299,7 +327,8 @@ class HomeScreenRefactored extends StatelessWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () => context.push('/search?category=${item['category']}'),
+                    onTap: () =>
+                        context.push('/search?category=${item['category']}'),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.all(16),

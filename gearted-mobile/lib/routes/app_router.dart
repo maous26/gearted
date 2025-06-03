@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/models/category_model.dart';
+import '../models/airsoft_category.dart'; // Import for AirsoftCategoryType
 import '../features/layout/main_layout.dart';
+import '../features/search/screens/search_screen_refactored.dart'; // Import for SearchScreenRefactored
 import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/home/screens/home_screen_refactored.dart';
 import '../features/search/screens/search_screen.dart';
-import '../features/search/screens/search_screen_refactored.dart';
+import '../features/search/screens/search_screen_new.dart';
 import '../features/listing/screens/create_listing_screen.dart';
 import '../features/listing/screens/listing_detail_screen.dart';
 import '../features/chat/screens/chat_list_screen.dart';
@@ -63,7 +64,7 @@ GoRouter createRouter() {
           },
         ),
       ),
-      
+
       // Route pour l'ancien home screen (compatibilité)
       GoRoute(
         path: '/home-legacy',
@@ -78,43 +79,44 @@ GoRouter createRouter() {
           },
         ),
       ),
-      
+
       GoRoute(
         path: '/search',
         pageBuilder: (context, state) {
           final categoryId = state.uri.queryParameters['categoryId'];
           final query = state.uri.queryParameters['query'];
           final categoryType = state.uri.queryParameters['categoryType'];
-          
+
           // Parse category type from string
-          CategoryType? parsedType;
+          AirsoftCategoryType? parsedType;
           if (categoryType != null) {
             try {
-              parsedType = CategoryType.values.firstWhere(
+              parsedType = AirsoftCategoryType.values.firstWhere(
                 (type) => type.name == categoryType,
               );
             } catch (e) {
               parsedType = null;
             }
           }
-          
+
           return CustomTransitionPage(
             key: state.pageKey,
             child: MainLayout(
               currentIndex: 1,
-              child: SearchScreenRefactored(
+              child: SearchScreenNew(
                 initialCategoryId: categoryId,
                 initialQuery: query,
                 initialType: parsedType,
               ),
             ),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
           );
         },
       ),
-      
+
       // Route pour l'ancien search screen (compatibilité)
       GoRoute(
         path: '/search-legacy',
@@ -238,7 +240,7 @@ GoRouter createRouter() {
           child: MainLayout(
             currentIndex: 1,
             child: SearchScreenRefactored(
-              initialType: CategoryType.equipment,
+              initialType: AirsoftCategoryType.protection,
               initialQuery: null,
             ),
           ),
@@ -252,10 +254,10 @@ GoRouter createRouter() {
         path: '/category/:categoryType',
         pageBuilder: (context, state) {
           final categoryTypeName = state.pathParameters['categoryType'] ?? '';
-          CategoryType? categoryType;
-          
+          AirsoftCategoryType? categoryType;
+
           try {
-            categoryType = CategoryType.values.firstWhere(
+            categoryType = AirsoftCategoryType.values.firstWhere(
               (type) => type.name == categoryTypeName,
             );
           } catch (e) {
@@ -271,7 +273,8 @@ GoRouter createRouter() {
                 initialQuery: null,
               ),
             ),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
           );
