@@ -22,6 +22,7 @@ class GeartedTheme {
   // Compatibilité rétroactive pour l'ancien code
   static const Color primaryBlue = steelBlue; // Ancien 'primaryBlue' = steelBlue martial
   static const Color accentOrange = warningOrange; // Ancien 'accentOrange' = warningOrange martial
+  static const Color lightBlue = steelBlue; // Compatibilité legacy
 
   // Thème clair (mode jour tactique)
   static final ThemeData lightTheme = ThemeData(
