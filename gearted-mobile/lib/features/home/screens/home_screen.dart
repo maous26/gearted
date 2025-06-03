@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme.dart';
 import '../../../widgets/common/gearted_card.dart';
 import '../../../widgets/common/animations.dart';
@@ -83,369 +84,652 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: GeartedTheme.militaryBlack,
       appBar: AppBar(
+        backgroundColor: GeartedTheme.militaryBlack,
+        elevation: 4,
         title: Row(
           children: [
-            // Enhanced visible logo for app bar
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                color: GeartedTheme.militaryBlack,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: GeartedTheme.victoryGold, width: 2.5),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    color: GeartedTheme.battleRed.withOpacity(0.5),
+                    blurRadius: 10,
+                    spreadRadius: 3,
+                    offset: const Offset(0, 3),
                   ),
                 ],
-                border: Border.all(
-                  color: GeartedTheme.lightBlue.withOpacity(0.2),
-                  width: 1,
-                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(6),
                 child: Image.asset(
                   'assets/images/gearted_transparent.png',
                   fit: BoxFit.contain,
-                  width: 28,
-                  height: 28,
+                  width: 32,
+                  height: 32,
                 ),
               ),
             ),
-            const Text(
-              'Gear',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            Text(
+              'GEAR',
+              style: GoogleFonts.oswald(
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                letterSpacing: 2,
+                color: Colors.white,
+              ),
             ),
-            const Text(
-              'ted',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: GeartedTheme.lightBlue,
+            Text(
+              'TED',
+              style: GoogleFonts.oswald(
+                fontWeight: FontWeight.w900,
+                color: GeartedTheme.victoryGold,
+                fontSize: 22,
+                letterSpacing: 2,
               ),
             ),
           ],
         ),
-        backgroundColor: GeartedTheme.primaryBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: Icon(Icons.military_tech,
+                color: GeartedTheme.victoryGold, size: 28),
             onPressed: () => context.push('/notifications'),
+            tooltip: 'Notifications',
           ),
           IconButton(
-            icon: const Icon(Icons.favorite_outline),
+            icon: Icon(Icons.shield, color: GeartedTheme.battleRed, size: 28),
             onPressed: () => context.push('/favorites'),
+            tooltip: 'Favoris',
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: _isRefreshing
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Barre de recherche
-                    Container(
-                      color: GeartedTheme.primaryBlue,
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: GestureDetector(
-                        onTap: () => context.push('/search'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.search,
-                                color: Colors.white.withOpacity(0.8),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              GeartedTheme.militaryBlack,
+              GeartedTheme.combatGreen.withOpacity(0.85)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          image: DecorationImage(
+            image: AssetImage('assets/images/camo_pattern.png'),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.10),
+              BlendMode.darken,
+            ),
+          ),
+        ),
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          child: _isRefreshing
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // SEARCH BAR
+                      Container(
+                        color: GeartedTheme.militaryBlack,
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: GestureDetector(
+                          onTap: () => context.push('/search'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color:
+                                    GeartedTheme.victoryGold.withOpacity(0.3),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Rechercher une pièce, une marque...',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.8),
-                                    fontSize: 14,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.search,
+                                    color: GeartedTheme.victoryGold, size: 22),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'RECHERCHER UNE PIÈCE, UNE MARQUE...',
+                                    style: GoogleFonts.oswald(
+                                      color: Colors.white.withOpacity(0.85),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-
-                    // Catégories
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: const CategoryDisplayWidget(),
-                    ),
-
-                    // Equipment Category Section
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: const EquipmentCategoryWidget(),
-                    ),
-
-                    // Section Hot Deals
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Text(
-                                    'Hot Deals',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                      // CATEGORIES
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: const CategoryDisplayWidget(),
+                      ),
+                      // EQUIPMENT CATEGORIES
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: const EquipmentCategoryWidget(),
+                      ),
+                      // HOT DEALS SECTION
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.local_fire_department,
+                                    color: GeartedTheme.battleRed, size: 36),
+                                const SizedBox(width: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: GeartedTheme.militaryBlack,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                        color: GeartedTheme.battleRed,
+                                        width: 2.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: GeartedTheme.battleRed
+                                            .withOpacity(0.18),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  PulseAnimationWidget(
-                                    child: Icon(
-                                      Icons.local_fire_department,
-                                      color: Colors.orange,
-                                      size: 24,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              TextButton(
-                                onPressed: () => context.push('/search'),
-                                child: const Text('Voir tout'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _isLoading
-                              ? const SizedBox(
-                                  height: 250,
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : _hotDeals.isEmpty
-                                  ? const SizedBox(
-                                      height: 250,
-                                      child: Center(
-                                        child: Text(
-                                          'Aucune offre spéciale pour le moment',
-                                          style: TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 16,
-                                          ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.chevron_right,
+                                          color: GeartedTheme.victoryGold,
+                                          size: 22),
+                                      Text(
+                                        'HOT DEALS',
+                                        style: GoogleFonts.oswald(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                          letterSpacing: 2.5,
+                                          color: GeartedTheme.battleRed,
                                         ),
                                       ),
-                                    )
-                                  : SizedBox(
-                                      height: 250,
-                                      child: ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: _hotDeals.length,
-                                        itemBuilder: (context, index) {
-                                          final item = _hotDeals[index];
-                                          final listingId =
-                                              item['id'] as String;
-
-                                          return AnimatedListItem(
-                                            index: index,
-                                            delay: const Duration(
-                                                milliseconds: 100),
-                                            child: Container(
-                                              width: 160,
-                                              margin: const EdgeInsets.only(
-                                                  right: 12),
-                                              child: GeartedItemCard(
-                                                title: item['title'] as String,
-                                                price: item['price'] as double,
-                                                originalPrice:
-                                                    item['originalPrice']
-                                                        as double?,
-                                                condition:
-                                                    item['condition'] as String,
-                                                rating: (item['rating']
-                                                        as double?) ??
-                                                    0.0,
-                                                onTap: () {
-                                                  context.push(
-                                                      '/listing/$listingId');
-                                                },
-                                                onFavoriteToggle: () async {
-                                                  try {
-                                                    await ListingsService
-                                                        .toggleFavorite(
-                                                            listingId);
-                                                    // Refresh favorites
-                                                    final updatedFavorites =
-                                                        await ListingsService
-                                                            .getFavoriteListings();
-                                                    setState(() {
-                                                      _favoriteListings =
-                                                          updatedFavorites;
-                                                    });
-                                                  } catch (e) {
-                                                    ScaffoldMessenger.of(
-                                                            context)
-                                                        .showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                            'Erreur: ${e.toString()}'),
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                                isFavorite: _favoriteListings
-                                                    .contains(listingId),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                        ],
-                      ),
-                    ),
-
-                    // Section Récemment ajoutés
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Récemment ajoutés',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'OFFRES DE COMBAT LIMITÉES',
+                              style: GoogleFonts.oswald(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: GeartedTheme.tacticalGray,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.only(top: 10),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: GeartedTheme.militaryBlack
+                                    .withOpacity(0.92),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color:
+                                      GeartedTheme.battleRed.withOpacity(0.4),
+                                  width: 2,
+                                ),
+                                image: DecorationImage(
+                                  image: AssetImage(
+                                      'assets/images/grunge_overlay.png'),
+                                  fit: BoxFit.cover,
+                                  colorFilter: ColorFilter.mode(
+                                    Colors.black.withOpacity(0.08),
+                                    BlendMode.darken,
+                                  ),
                                 ),
                               ),
-                              TextButton(
-                                onPressed: () => context.push('/search'),
-                                child: const Text('Voir tout'),
+                              child: Column(
+                                children: [
+                                  _isLoading
+                                      ? const SizedBox(
+                                          height: 250,
+                                          child: Center(
+                                              child:
+                                                  CircularProgressIndicator()),
+                                        )
+                                      : _hotDeals.isEmpty
+                                          ? Container(
+                                              height: 200,
+                                              decoration: BoxDecoration(
+                                                color: GeartedTheme.tacticalGray
+                                                    .withOpacity(0.12),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: GeartedTheme
+                                                      .tacticalGray
+                                                      .withOpacity(0.3),
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.military_tech,
+                                                        size: 48,
+                                                        color: GeartedTheme
+                                                            .tacticalGray),
+                                                    const SizedBox(height: 12),
+                                                    Text(
+                                                      'AUCUNE OFFRE DE COMBAT\nPOUR LE MOMENT',
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: GoogleFonts.oswald(
+                                                        color: GeartedTheme
+                                                            .tacticalGray,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        letterSpacing: 1.2,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            )
+                                          : SizedBox(
+                                              height: 250,
+                                              child: ListView.builder(
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                itemCount: _hotDeals.length,
+                                                itemBuilder: (context, index) {
+                                                  final item = _hotDeals[index];
+                                                  final listingId =
+                                                      item['id'] as String;
+                                                  return AnimatedListItem(
+                                                    index: index,
+                                                    delay: const Duration(
+                                                        milliseconds: 100),
+                                                    child: Container(
+                                                      width: 160,
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                              right: 12),
+                                                      decoration: BoxDecoration(
+                                                        color: GeartedTheme
+                                                            .militaryBlack
+                                                            .withOpacity(0.98),
+                                                        border: Border.all(
+                                                          color: GeartedTheme
+                                                              .battleRed
+                                                              .withOpacity(0.5),
+                                                          width: 2,
+                                                        ),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: GeartedTheme
+                                                                .battleRed
+                                                                .withOpacity(
+                                                                    0.12),
+                                                            blurRadius: 6,
+                                                            spreadRadius: 1,
+                                                          ),
+                                                        ],
+                                                        image: DecorationImage(
+                                                          image: AssetImage(
+                                                              'assets/images/grunge_overlay.png'),
+                                                          fit: BoxFit.cover,
+                                                          colorFilter:
+                                                              ColorFilter.mode(
+                                                            Colors.black
+                                                                .withOpacity(
+                                                                    0.10),
+                                                            BlendMode.darken,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      child: GeartedItemCard(
+                                                        title: (item['title']
+                                                                as String)
+                                                            .toUpperCase(),
+                                                        price: item['price']
+                                                            as double,
+                                                        originalPrice: item[
+                                                                'originalPrice']
+                                                            as double?,
+                                                        condition:
+                                                            (item['condition']
+                                                                    as String)
+                                                                .toUpperCase(),
+                                                        rating: (item['rating']
+                                                                as double?) ??
+                                                            0.0,
+                                                        onTap: () {
+                                                          context.push(
+                                                              '/listing/$listingId');
+                                                        },
+                                                        onFavoriteToggle:
+                                                            () async {
+                                                          try {
+                                                            await ListingsService
+                                                                .toggleFavorite(
+                                                                    listingId);
+                                                            final updatedFavorites =
+                                                                await ListingsService
+                                                                    .getFavoriteListings();
+                                                            setState(() {
+                                                              _favoriteListings =
+                                                                  updatedFavorites;
+                                                            });
+                                                          } catch (e) {
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                    'Erreur: \\${e.toString()}'),
+                                                                backgroundColor:
+                                                                    Colors.red,
+                                                              ),
+                                                            );
+                                                          }
+                                                        },
+                                                        isFavorite:
+                                                            _favoriteListings
+                                                                .contains(
+                                                                    listingId),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                ],
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _isLoading
-                              ? const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // AJOUTS RECENTS SECTION
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.new_releases,
+                                    color: GeartedTheme.combatGreen, size: 36),
+                                const SizedBox(width: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: GeartedTheme.militaryBlack,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                        color: GeartedTheme.combatGreen,
+                                        width: 2.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: GeartedTheme.combatGreen
+                                            .withOpacity(0.18),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
                                   ),
-                                )
-                              : _recentListings.isEmpty
-                                  ? const SizedBox(
-                                      height: 300,
-                                      child: Center(
-                                        child: Text(
-                                          'Aucun article récent pour le moment',
-                                          style: TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 16,
-                                          ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.chevron_right,
+                                          color: GeartedTheme.steelBlue,
+                                          size: 22),
+                                      Text(
+                                        'AJOUTS RÉCENTS',
+                                        style: GoogleFonts.oswald(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                          letterSpacing: 2.5,
+                                          color: GeartedTheme.combatGreen,
                                         ),
                                       ),
-                                    )
-                                  : GridView.builder(
-                                      shrinkWrap: true,
-                                      physics:
-                                          const NeverScrollableScrollPhysics(),
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        childAspectRatio: 0.75,
-                                        crossAxisSpacing: 12,
-                                        mainAxisSpacing: 12,
-                                      ),
-                                      itemCount: _recentListings.length > 6
-                                          ? 6
-                                          : _recentListings.length,
-                                      itemBuilder: (context, index) {
-                                        final item = _recentListings[index];
-                                        final listingId = item['id'] as String;
-
-                                        return AnimatedListItem(
-                                          index: index,
-                                          delay:
-                                              const Duration(milliseconds: 50),
-                                          child: GeartedItemCard(
-                                            title: item['title'] as String,
-                                            price: item['price'] as double,
-                                            originalPrice: item['originalPrice']
-                                                as double?,
-                                            condition:
-                                                item['condition'] as String,
-                                            rating:
-                                                (item['rating'] as double?) ??
-                                                    0.0,
-                                            onTap: () {
-                                              context
-                                                  .push('/listing/$listingId');
-                                            },
-                                            onFavoriteToggle: () async {
-                                              try {
-                                                await ListingsService
-                                                    .toggleFavorite(listingId);
-                                                // Refresh favorites
-                                                final updatedFavorites =
-                                                    await ListingsService
-                                                        .getFavoriteListings();
-                                                setState(() {
-                                                  _favoriteListings =
-                                                      updatedFavorites;
-                                                });
-                                              } catch (e) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                        'Erreur: ${e.toString()}'),
-                                                    backgroundColor: Colors.red,
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'NOUVEAU MATÉRIEL DE TERRAIN',
+                              style: GoogleFonts.oswald(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: GeartedTheme.tacticalGray,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.only(top: 10),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: GeartedTheme.militaryBlack
+                                    .withOpacity(0.92),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color:
+                                      GeartedTheme.combatGreen.withOpacity(0.4),
+                                  width: 2,
+                                ),
+                                image: DecorationImage(
+                                  image: AssetImage(
+                                      'assets/images/grunge_overlay.png'),
+                                  fit: BoxFit.cover,
+                                  colorFilter: ColorFilter.mode(
+                                    Colors.black.withOpacity(0.08),
+                                    BlendMode.darken,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  _isLoading
+                                      ? const SizedBox(
+                                          height: 300,
+                                          child: Center(
+                                              child:
+                                                  CircularProgressIndicator()),
+                                        )
+                                      : _recentListings.isEmpty
+                                          ? Container(
+                                              height: 250,
+                                              decoration: BoxDecoration(
+                                                color: GeartedTheme.tacticalGray
+                                                    .withOpacity(0.12),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: GeartedTheme
+                                                      .tacticalGray
+                                                      .withOpacity(0.3),
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.inventory_2,
+                                                        size: 48,
+                                                        color: GeartedTheme
+                                                            .tacticalGray),
+                                                    const SizedBox(height: 12),
+                                                    Text(
+                                                      'AUCUN NOUVEL ÉQUIPEMENT\nPOUR LE MOMENT',
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: GoogleFonts.oswald(
+                                                        color: GeartedTheme
+                                                            .tacticalGray,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        letterSpacing: 1.2,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            )
+                                          : GridView.builder(
+                                              shrinkWrap: true,
+                                              physics:
+                                                  const NeverScrollableScrollPhysics(),
+                                              gridDelegate:
+                                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisCount: 2,
+                                                childAspectRatio: 0.75,
+                                                crossAxisSpacing: 12,
+                                                mainAxisSpacing: 12,
+                                              ),
+                                              itemCount:
+                                                  _recentListings.length > 6
+                                                      ? 6
+                                                      : _recentListings.length,
+                                              itemBuilder: (context, index) {
+                                                final item =
+                                                    _recentListings[index];
+                                                final listingId =
+                                                    item['id'] as String;
+                                                return AnimatedListItem(
+                                                  index: index,
+                                                  delay: const Duration(
+                                                      milliseconds: 50),
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: GeartedTheme
+                                                          .militaryBlack
+                                                          .withOpacity(0.98),
+                                                      border: Border.all(
+                                                        color: GeartedTheme
+                                                            .combatGreen
+                                                            .withOpacity(0.5),
+                                                        width: 2,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              6),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: GeartedTheme
+                                                              .combatGreen
+                                                              .withOpacity(
+                                                                  0.12),
+                                                          blurRadius: 6,
+                                                          spreadRadius: 1,
+                                                        ),
+                                                      ],
+                                                      image: DecorationImage(
+                                                        image: AssetImage(
+                                                            'assets/images/grunge_overlay.png'),
+                                                        fit: BoxFit.cover,
+                                                        colorFilter:
+                                                            ColorFilter.mode(
+                                                          Colors.black
+                                                              .withOpacity(
+                                                                  0.10),
+                                                          BlendMode.darken,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    child: GeartedItemCard(
+                                                      title: (item['title']
+                                                              as String)
+                                                          .toUpperCase(),
+                                                      price: item['price']
+                                                          as double,
+                                                      originalPrice:
+                                                          item['originalPrice']
+                                                              as double?,
+                                                      condition:
+                                                          (item['condition']
+                                                                  as String)
+                                                              .toUpperCase(),
+                                                      rating: (item['rating']
+                                                              as double?) ??
+                                                          0.0,
+                                                      onTap: () {
+                                                        context.push(
+                                                            '/listing/$listingId');
+                                                      },
+                                                      onFavoriteToggle:
+                                                          () async {
+                                                        try {
+                                                          await ListingsService
+                                                              .toggleFavorite(
+                                                                  listingId);
+                                                          final updatedFavorites =
+                                                              await ListingsService
+                                                                  .getFavoriteListings();
+                                                          setState(() {
+                                                            _favoriteListings =
+                                                                updatedFavorites;
+                                                          });
+                                                        } catch (e) {
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                  'Erreur: \\${e.toString()}'),
+                                                              backgroundColor:
+                                                                  Colors.red,
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                      isFavorite:
+                                                          _favoriteListings
+                                                              .contains(
+                                                                  listingId),
+                                                    ),
                                                   ),
                                                 );
-                                              }
-                                            },
-                                            isFavorite: _favoriteListings
-                                                .contains(listingId),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                        ],
+                                              },
+                                            ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-
-                    const SizedBox(height: 100), // Espace pour la nav bar
-                  ],
+                      const SizedBox(height: 100),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
