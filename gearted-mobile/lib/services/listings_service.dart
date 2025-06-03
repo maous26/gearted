@@ -1,13 +1,48 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/airsoft_categories.dart';
-import '../widgets/equipment/equipment_category_widget.dart';
+import '../core/constants/categories_data.dart';
+import '../core/models/category_model.dart';
 import 'user_service.dart';
 
 /// Service to manage listings locally until backend integration
 class ListingsService {
   static const String _listingsKey = 'saved_listings';
   static const String _favoriteListingsKey = 'favorite_listings';
+
+  /// Helper method to check if a category is equipment/protection related
+  static bool _isEquipmentCategory(String categoryName) {
+    try {
+      // Check if the category is in equipment protection or high-priority categories
+      final category = CategoriesData.allCategories.firstWhere(
+        (cat) => cat.name == categoryName,
+      );
+      
+      // Consider equipment categories as those with high priority (protection-focused)
+      // or equipment/accessory types
+      return category.type == CategoryType.equipment || 
+             category.type == CategoryType.accessory ||
+             category.priority >= 80; // High priority = protection equipment
+    } catch (e) {
+      // If category not found in new system, fallback to checking old category constants
+      return _isLegacyEquipmentCategory(categoryName);
+    }
+  }
+
+  /// Fallback helper for legacy categories not yet migrated
+  static bool _isLegacyEquipmentCategory(String categoryName) {
+    // Legacy equipment categories from old system
+    const equipmentCategories = [
+      'gilets-tactiques',
+      'masques',
+      'lunettes-protections',
+      'casques',
+      'genouilleres-coudieres',
+      'gants',
+      'chaussures-tactiques',
+    ];
+    return equipmentCategories.contains(categoryName);
+  }
 
   /// Get all listings
   static Future<List<Map<String, dynamic>>> getAllListings() async {
@@ -27,7 +62,7 @@ class ListingsService {
     final allListings = await getAllListings();
     return allListings.where((listing) {
       final category = listing['category'] as String?;
-      return category != null && EquipmentCategoryHelper.isEquipmentCategory(category);
+      return category != null && _isEquipmentCategory(category);
     }).toList();
   }
 
@@ -49,7 +84,7 @@ class ListingsService {
       results = results.where((listing) {
         final listingCategory = listing['category'] as String?;
         return listingCategory != null && 
-               EquipmentCategoryHelper.isEquipmentCategory(listingCategory);
+               _isEquipmentCategory(listingCategory);
       }).toList();
     }
 
@@ -100,9 +135,9 @@ class ListingsService {
     // Sort with equipment prioritization
     if (prioritizeEquipment) {
       results.sort((a, b) {
-        final aIsEquipment = EquipmentCategoryHelper.isEquipmentCategory(
+        final aIsEquipment = _isEquipmentCategory(
             a['category'] as String? ?? '');
-        final bIsEquipment = EquipmentCategoryHelper.isEquipmentCategory(
+        final bIsEquipment = _isEquipmentCategory(
             b['category'] as String? ?? '');
         
         if (aIsEquipment && !bIsEquipment) return -1;
@@ -144,9 +179,9 @@ class ListingsService {
     if (prioritizeEquipment) {
       // Sort equipment items first, then by date
       allListings.sort((a, b) {
-        final aIsEquipment = EquipmentCategoryHelper.isEquipmentCategory(
+        final aIsEquipment = _isEquipmentCategory(
             a['category'] as String? ?? '');
-        final bIsEquipment = EquipmentCategoryHelper.isEquipmentCategory(
+        final bIsEquipment = _isEquipmentCategory(
             b['category'] as String? ?? '');
         
         if (aIsEquipment && !bIsEquipment) return -1;
