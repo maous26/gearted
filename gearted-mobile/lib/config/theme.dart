@@ -1,195 +1,208 @@
 import 'package:flutter/material.dart';
 
 class GeartedTheme {
-  // Couleurs principales - War/Victory theme
-  static const Color primaryBlue = Color(0xFF1E3A8A); // Keep existing blue
-  static const Color secondaryGreen =
-      Color(0xFF2F4F4F); // Dark slate gray (tactical)
-  static const Color accentOrange =
-      Color(0xFFB8860B); // Dark golden rod (victory)
-  static const Color neutralDark = Color(0xFF1F2937);
-  static const Color neutralLight = Color(0xFFF9FAFB);
-  static const Color lightBlue = Color(0xFF93C5FD);
-  static const Color lightGreen = Color(0xFFA3B18A);
+  // Couleurs primaires de guerre
+  static const Color militaryBlack = Color(0xFF0A0A0A);      // Noir profond
+  static const Color battleRed = Color(0xFF8B0000);          // Rouge sang foncé
+  static const Color tacticalGray = Color(0xFF1C1C1C);       // Gris acier
+  static const Color combatGreen = Color(0xFF2F4F2F);        // Vert militaire sombre
+  static const Color warningOrange = Color(0xFFD2691E);      // Orange brûlé (alertes)
+  static const Color steelBlue = Color(0xFF4682B4);          // Bleu acier
+  static const Color mudBrown = Color(0xFF3E2723);           // Marron boue
+  static const Color smokeGray = Color(0xFF424242);          // Gris fumée
 
-  // War/Victory themed colors - ENHANCED
-  static const Color battleRed = Color(0xFF8B0000); // Dark red
-  static const Color tacticalGray = Color(0xFF2F4F4F); // Dark slate gray
-  static const Color victoryGold = Color(0xFFDAA520); // More vibrant gold
-  static const Color combatGreen = Color(0xFF556B2F); // Dark olive green
-  static const Color steelBlue = Color(0xFF4682B4); // Steel blue
-  static const Color warningOrange = Color(0xFFFF4500); // Orange red for alerts
-  static const Color militaryBlack = Color(0xFF1C1C1C); // Deep military black
-  static const Color camouflageGreen = Color(0xFF4F5D2F); // Camo green
+  // Couleurs d'accent
+  static const Color victoryGold = Color(0xFFB8860B);        // Or foncé (succès/premium)
+  static const Color bulletSilver = Color(0xFF708090);       // Argent métallique
+  static const Color bloodOrange = Color(0xFFCC5500);        // Orange sang
+  static const Color nightVision = Color(0xFF00FF00);        // Vert vision nocturne
 
-  // Thème clair
+  // Thème clair (mode jour tactique)
   static final ThemeData lightTheme = ThemeData(
-    useMaterial3: true,
+    useMaterial3: false, // Plus angulaire, moins arrondi
     colorScheme: ColorScheme.light(
-      primary: primaryBlue,
-      secondary: secondaryGreen,
-      tertiary: accentOrange,
+      primary: combatGreen,
+      secondary: battleRed,
+      tertiary: warningOrange,
+      background: smokeGray,
+      surface: tacticalGray,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onTertiary: Colors.white,
-      background: neutralLight,
-      surface: Colors.white,
+      error: bloodOrange,
     ),
-    scaffoldBackgroundColor: neutralLight,
-    fontFamily: 'Inter',
-    textTheme: _createTextTheme(Colors.black),
+    scaffoldBackgroundColor: militaryBlack,
+    fontFamily: 'Oswald', // Police militaire
     appBarTheme: AppBarTheme(
-      backgroundColor: primaryBlue,
-      foregroundColor: Colors.white,
+      backgroundColor: militaryBlack,
+      foregroundColor: victoryGold,
       elevation: 0,
+      titleTextStyle: TextStyle(
+        fontFamily: 'Oswald',
+        fontSize: 22,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 2,
+        color: Colors.white,
+      ),
     ),
     buttonTheme: ButtonThemeData(
-      buttonColor: primaryBlue,
+      buttonColor: battleRed,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(4), // Angles durs
+        side: BorderSide(color: bloodOrange, width: 2),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: primaryBlue,
+        backgroundColor: battleRed,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(4),
+          side: BorderSide(color: bloodOrange, width: 2),
         ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        textStyle: const TextStyle(
+          fontFamily: 'Oswald',
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
+        ),
+      ),
+    ),
+    cardTheme: CardTheme(
+      color: tacticalGray,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(0), // Pas d'arrondi
+        side: BorderSide(color: battleRed, width: 2),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(4),
+        borderSide: BorderSide(color: steelBlue),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: primaryBlue, width: 2),
+        borderRadius: BorderRadius.circular(4),
+        borderSide: BorderSide(color: nightVision, width: 2),
       ),
       filled: true,
-      fillColor: Colors.grey.shade50,
-    ),
-    cardTheme: CardTheme(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+      fillColor: smokeGray,
+      hintStyle: TextStyle(
+        color: nightVision.withOpacity(0.5),
+        fontFamily: 'Courier',
       ),
+    ),
+    textTheme: _createTextTheme(Colors.white),
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: militaryBlack,
+      selectedItemColor: battleRed,
+      unselectedItemColor: smokeGray,
+      selectedLabelStyle: TextStyle(
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.5,
+      ),
+      unselectedLabelStyle: TextStyle(
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.normal,
+        letterSpacing: 1.2,
+      ),
+      type: BottomNavigationBarType.fixed,
+    ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: OpenUpwardsPageTransitionsBuilder(),
+      },
     ),
   );
 
-  // Thème sombre
-  static final ThemeData darkTheme = ThemeData(
-    useMaterial3: true,
+  // Thème sombre (identique, mais peut être ajusté si besoin)
+  static final ThemeData darkTheme = lightTheme.copyWith(
     colorScheme: ColorScheme.dark(
-      primary: primaryBlue,
-      secondary: secondaryGreen,
-      tertiary: accentOrange,
+      primary: combatGreen,
+      secondary: battleRed,
+      tertiary: warningOrange,
+      background: militaryBlack,
+      surface: tacticalGray,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onTertiary: Colors.white,
-      background: Color(0xFF121212),
-      surface: Color(0xFF1E1E1E),
+      error: bloodOrange,
     ),
-    scaffoldBackgroundColor: Color(0xFF121212),
-    fontFamily: 'Inter',
+    scaffoldBackgroundColor: militaryBlack,
     textTheme: _createTextTheme(Colors.white),
-    appBarTheme: AppBarTheme(
-      backgroundColor: Color(0xFF1E1E1E),
-      foregroundColor: Colors.white,
-      elevation: 0,
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: primaryBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade800),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: primaryBlue, width: 2),
-      ),
-      filled: true,
-      fillColor: Colors.grey.shade900,
-    ),
-    cardTheme: CardTheme(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
   );
 
-  // Création du thème de texte
   static TextTheme _createTextTheme(Color textColor) {
     return TextTheme(
       displayLarge: TextStyle(
-        fontFamily: 'Montserrat',
-        fontWeight: FontWeight.bold,
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.w900,
         color: textColor,
+        letterSpacing: 2,
       ),
       displayMedium: TextStyle(
-        fontFamily: 'Montserrat',
-        fontWeight: FontWeight.bold,
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.w900,
         color: textColor,
+        letterSpacing: 2,
       ),
       displaySmall: TextStyle(
-        fontFamily: 'Montserrat',
-        fontWeight: FontWeight.bold,
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.w900,
         color: textColor,
+        letterSpacing: 2,
       ),
       headlineLarge: TextStyle(
-        fontFamily: 'Montserrat',
+        fontFamily: 'Oswald',
         fontWeight: FontWeight.bold,
         color: textColor,
+        letterSpacing: 2,
       ),
       headlineMedium: TextStyle(
-        fontFamily: 'Montserrat',
+        fontFamily: 'Oswald',
         fontWeight: FontWeight.bold,
         color: textColor,
+        letterSpacing: 2,
       ),
       headlineSmall: TextStyle(
-        fontFamily: 'Montserrat',
-        fontWeight: FontWeight.w600,
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.w700,
         color: textColor,
+        letterSpacing: 1.5,
       ),
       titleLarge: TextStyle(
-        fontFamily: 'Montserrat',
-        fontWeight: FontWeight.w600,
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.w700,
         color: textColor,
+        letterSpacing: 1.5,
       ),
       titleMedium: TextStyle(
-        fontFamily: 'Montserrat',
-        fontWeight: FontWeight.w600,
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.w700,
         color: textColor,
+        letterSpacing: 1.2,
       ),
       titleSmall: TextStyle(
-        fontFamily: 'Montserrat',
-        fontWeight: FontWeight.w600,
+        fontFamily: 'Oswald',
+        fontWeight: FontWeight.w700,
         color: textColor,
+        letterSpacing: 1.2,
       ),
       bodyLarge: TextStyle(
-        fontFamily: 'Inter',
+        fontFamily: 'Oswald',
         fontWeight: FontWeight.normal,
         color: textColor,
       ),
       bodyMedium: TextStyle(
-        fontFamily: 'Inter',
+        fontFamily: 'Oswald',
         fontWeight: FontWeight.normal,
         color: textColor,
       ),
       bodySmall: TextStyle(
-        fontFamily: 'Inter',
+        fontFamily: 'Oswald',
         fontWeight: FontWeight.normal,
         color: textColor,
       ),
