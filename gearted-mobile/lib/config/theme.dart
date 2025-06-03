@@ -2,20 +2,26 @@ import 'package:flutter/material.dart';
 
 class GeartedTheme {
   // Couleurs primaires de guerre
-  static const Color militaryBlack = Color(0xFF0A0A0A);      // Noir profond
-  static const Color battleRed = Color(0xFF8B0000);          // Rouge sang foncé
-  static const Color tacticalGray = Color(0xFF1C1C1C);       // Gris acier
-  static const Color combatGreen = Color(0xFF2F4F2F);        // Vert militaire sombre
-  static const Color warningOrange = Color(0xFFD2691E);      // Orange brûlé (alertes)
-  static const Color steelBlue = Color(0xFF4682B4);          // Bleu acier
-  static const Color mudBrown = Color(0xFF3E2723);           // Marron boue
-  static const Color smokeGray = Color(0xFF424242);          // Gris fumée
+  static const Color militaryBlack = Color(0xFF0A0A0A); // Noir profond
+  static const Color battleRed = Color(0xFF8B0000); // Rouge sang foncé
+  static const Color tacticalGray = Color(0xFF1C1C1C); // Gris acier
+  static const Color combatGreen = Color(0xFF2F4F2F); // Vert militaire sombre
+  static const Color warningOrange =
+      Color(0xFFD2691E); // Orange brûlé (alertes)
+  static const Color steelBlue = Color(0xFF4682B4); // Bleu acier
+  static const Color mudBrown = Color(0xFF3E2723); // Marron boue
+  static const Color smokeGray = Color(0xFF424242); // Gris fumée
 
   // Couleurs d'accent
-  static const Color victoryGold = Color(0xFFB8860B);        // Or foncé (succès/premium)
-  static const Color bulletSilver = Color(0xFF708090);       // Argent métallique
-  static const Color bloodOrange = Color(0xFFCC5500);        // Orange sang
-  static const Color nightVision = Color(0xFF00FF00);        // Vert vision nocturne
+  static const Color victoryGold =
+      Color(0xFFB8860B); // Or foncé (succès/premium)
+  static const Color bulletSilver = Color(0xFF708090); // Argent métallique
+  static const Color bloodOrange = Color(0xFFCC5500); // Orange sang
+  static const Color nightVision = Color(0xFF00FF00); // Vert vision nocturne
+
+  // Compatibilité rétroactive pour l'ancien code
+  static const Color primaryBlue = steelBlue; // Ancien 'primaryBlue' = steelBlue martial
+  static const Color accentOrange = warningOrange; // Ancien 'accentOrange' = warningOrange martial
 
   // Thème clair (mode jour tactique)
   static final ThemeData lightTheme = ThemeData(
