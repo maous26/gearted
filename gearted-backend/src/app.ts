@@ -13,7 +13,6 @@ import userRoutes from './api/routes/user.routes';
 import listingRoutes from './api/routes/listing.routes';
 import uploadRoutes from './api/routes/upload.routes';
 import healthRoutes from './api/routes/health.routes';
-import categoriesRoutes from './api/routes/categories.routes';
 
 // Configuration
 config();
@@ -52,7 +51,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/health', healthRoutes);
-app.use('/api/categories', categoriesRoutes);
 
 // Gestion des erreurs
 app.use(errorMiddleware);
