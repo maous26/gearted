@@ -45,28 +45,5 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- Google Sign-In URL Schemes -->
-	<key>CFBundleURLTypes</key>
-	<array>
-		<key>CFBundleURLName</key>
-		<string>BUNDLE_ID</string>
-		<key>CFBundleURLSchemes</key>
-		<array>
-			<!-- Replace with your REVERSED_CLIENT_ID from GoogleService-Info.plist -->
-			<string>com.googleusercontent.apps.YOUR_REVERSED_CLIENT_ID_HERE</string>
-		</array>
-	</array>
-	<!-- Allow http traffic for development -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
-	<!-- Camera permission for profile photos -->
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs access to camera to take profile photos</string>
-	<!-- Photo library permission -->
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to photo library to select profile photos</string>
 </dict>
 </plist>

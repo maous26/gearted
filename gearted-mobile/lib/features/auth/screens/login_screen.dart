@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
-import '../../../config/oauth_config.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
 import '../../../services/auth_service.dart';
@@ -118,11 +117,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      if (!OAuthConfig.isGoogleConfigured) {
-        throw Exception(
-            'Configuration Google manquante. Veuillez configurer les identifiants Google dans le fichier .env');
-      }
-
       final result = await _authService.signInWithGoogle();
 
       if (result != null && context.mounted) {
@@ -130,24 +124,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        // Show a more descriptive error
-        String errorMessage = 'Erreur de connexion Google';
-        if (e.toString().contains('configuration') ||
-            e.toString().contains('.env')) {
-          errorMessage =
-              'Configuration OAuth incomplète. Contactez le support technique.';
-        }
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text('Erreur de connexion Google: ${e.toString()}'),
             backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Détails',
-              onPressed: () =>
-                  _showErrorDialog('Erreur Google OAuth', e.toString()),
-              textColor: Colors.white,
-            ),
           ),
         );
       }
@@ -166,11 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      if (!OAuthConfig.isFacebookConfigured) {
-        throw Exception(
-            'Configuration Facebook manquante. Veuillez configurer les identifiants Facebook dans le fichier .env');
-      }
-
       final result = await _authService.signInWithFacebook();
 
       if (result != null && context.mounted) {
@@ -178,24 +153,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        // Show a more descriptive error
-        String errorMessage = 'Erreur de connexion Facebook';
-        if (e.toString().contains('configuration') ||
-            e.toString().contains('.env')) {
-          errorMessage =
-              'Configuration OAuth incomplète. Contactez le support technique.';
-        }
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text('Erreur de connexion Facebook: ${e.toString()}'),
             backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Détails',
-              onPressed: () =>
-                  _showErrorDialog('Erreur Facebook OAuth', e.toString()),
-              textColor: Colors.white,
-            ),
           ),
         );
       }
@@ -206,28 +167,6 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
-  }
-
-  void _showErrorDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(
-            child: Text(message),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Fermer'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -242,33 +181,31 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                // Logo martial et nom de l'app
+                // Logo
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo militaire
-                    Image.asset(
-                      'assets/images/gearted_logo_military.png',
-                      width: 48,
-                      height: 48,
+                    Icon(
+                      Icons.settings,
+                      size: 40,
+                      color: GeartedTheme.primaryBlue,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     RichText(
                       text: TextSpan(
                         style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: 'Oswald',
-                          letterSpacing: 2,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Montserrat',
                         ),
                         children: [
                           TextSpan(
-                            text: 'GEAR',
-                            style: TextStyle(color: GeartedTheme.battleRed),
+                            text: 'Gear',
+                            style: TextStyle(color: GeartedTheme.primaryBlue),
                           ),
                           TextSpan(
-                            text: 'TED',
-                            style: TextStyle(color: GeartedTheme.victoryGold),
+                            text: 'ted',
+                            style: TextStyle(color: GeartedTheme.lightBlue),
                           ),
                         ],
                       ),
@@ -284,8 +221,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'Oswald',
-                    letterSpacing: 1.1,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -327,10 +262,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       'Mot de passe oublié?',
                       style: TextStyle(
-                        color: GeartedTheme.battleRed,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Oswald',
-                        letterSpacing: 1.2,
+                        color: GeartedTheme.primaryBlue,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -402,14 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Pas encore de compte?',
-                      style: TextStyle(
-                        fontFamily: 'Oswald',
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
+                    const Text('Pas encore de compte?'),
                     TextButton(
                       onPressed: () {
                         context.go('/register');
@@ -417,10 +343,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'S\'inscrire',
                         style: TextStyle(
-                          color: GeartedTheme.battleRed,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Oswald',
-                          letterSpacing: 1.2,
+                          color: GeartedTheme.primaryBlue,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),

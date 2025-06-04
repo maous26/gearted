@@ -1,292 +1,750 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../models/airsoft_category.dart';
-import '../../../services/category_service.dart';
-import '../../../widgets/search/advanced_search_bar.dart';
-import '../../../widgets/category/category_grid_widget.dart';
-import '../../../config/theme.dart';
 
-class SearchScreenNew extends StatefulWidget {
-  final String? initialCategoryId;
-  final String? initialQuery;
-  final AirsoftCategoryType? initialType;
+class SearchScreen extends StatefulWidget {
+  final String? category;
 
-  const SearchScreenNew({
-    super.key,
-    this.initialCategoryId,
-    this.initialQuery,
-    this.initialType,
-  });
+  const SearchScreen({super.key, this.category});
 
   @override
-  State<SearchScreenNew> createState() => _SearchScreenNewState();
+  State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenNewState extends State<SearchScreenNew>
-    with TickerProviderStateMixin {
-  // Search state
-  String _searchQuery = '';
-  List<AirsoftCategory> _selectedCategories = [];
+class _SearchScreenState extends State<SearchScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+  String _selectedSort = 'recent';
+
+  // Filtres actifs
+  final Set<String> _activeCategories = {};
+  RangeValues _priceRange = const RangeValues(0, 1000);
+  String? _selectedCondition;
+  bool _exchangeOnly = false;
+
+  // Résultats de recherche simulés
   List<Map<String, dynamic>> _searchResults = [];
-  bool _isLoading = false;
 
-  // Filter options
-  String _sortBy = 'relevance';
-  double? _minPrice;
-  double? _maxPrice;
-  String? _condition;
-  bool _showOnlyExchangeable = false;
+  // Conditions disponibles
+  final List<String> _conditions = [
+    'NEUF',
+    'COMME NEUF',
+    'TRÈS BON ÉTAT',
+    'BON ÉTAT',
+    'ÉTAT CORRECT',
+  ];
 
-  // UI state
-  bool _showAdvancedFilters = false;
-  final ScrollController _scrollController = ScrollController();
-  late AnimationController _filterAnimationController;
-  late Animation<double> _filterAnimation;
+  // Options de tri
+  final Map<String, String> _sortOptions = {
+    'recent': 'PLUS RÉCENT',
+    'price_asc': 'PRIX CROISSANT',
+    'price_desc': 'PRIX DÉCROISSANT',
+    'distance': 'DISTANCE',
+  };
+
+  // Catégories de filtrage rapide
+  final List<Map<String, dynamic>> _quickFilters = [
+    {
+      'id': 'replicas',
+      'name': 'RÉPLIQUES',
+      'icon': Icons.gps_fixed, // Cohérent avec home screen - visée tactique
+      'color': const Color(0xFF8B0000),
+    },
+    {
+      'id': 'protection',
+      'name': 'PROTECTION',
+      'icon': Icons.shield, // Parfait pour protection ✅
+      'color': const Color(0xFF2F4F2F),
+    },
+    {
+      'id': 'optics',
+      'name': 'OPTIQUES',
+      'icon': Icons.center_focus_strong, // Plus précis que zoom_in 🎯
+      'color': const Color(0xFF4A4A4A),
+    },
+    {
+      'id': 'tactical',
+      'name': 'TACTIQUE',
+      'icon': Icons.backpack, // Parfait pour équipement tactique ✅
+      'color': const Color(0xFF5C5C5C),
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
-    _initializeFromParams();
-    _performSearch();
-  }
-
-  void _initializeAnimations() {
-    _filterAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _filterAnimation = CurvedAnimation(
-      parent: _filterAnimationController,
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _initializeFromParams() {
-    // Initialize with parameters
-    if (widget.initialCategoryId != null) {
-      final category =
-          CategoryService.getCategoryById(widget.initialCategoryId!);
-      if (category != null) {
-        _selectedCategories = [category];
-      }
-    }
-
-    if (widget.initialQuery != null) {
-      _searchQuery = widget.initialQuery!;
-    }
-
-    if (widget.initialType != null) {
-      _selectedCategories = CategoryService.getAllMainCategories()
-          .where((cat) => cat.type == widget.initialType)
-          .toList();
+    if (widget.category != null) {
+      print('SearchScreen: Received category parameter: ${widget.category}');
+      _searchController.text = widget.category!;
+      _performSearch();
     }
   }
 
-  @override
-  void dispose() {
-    _filterAnimationController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _performSearch() async {
+  void _performSearch() {
     setState(() {
-      _isLoading = true;
+      _isSearching = true;
     });
 
-    try {
-      // Simulate search with filter parameters
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // Generate mock results based on search criteria
-      final mockResults = _generateMockResults();
-
+    // Simulation de recherche avec résultats basés sur la catégorie
+    Future.delayed(const Duration(milliseconds: 800), () {
       setState(() {
-        _searchResults = mockResults;
-        _isLoading = false;
+        _searchResults = _generateMockResults();
+        _isSearching = false;
       });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    });
   }
 
   List<Map<String, dynamic>> _generateMockResults() {
-    List<Map<String, dynamic>> results = [];
+    String query = _searchController.text.toLowerCase();
+    print('SearchScreen: Generating results for query: "$query"');
 
-    // Generate 12 mock results
-    for (int i = 0; i < 12; i++) {
-      final categories = CategoryService.getAllCategories();
-      final randomCategory = categories[i % categories.length];
-
-      results.add({
-        'id': 'result_$i',
-        'title': _generateMockTitle(randomCategory, i),
-        'price': 50 + (i * 25),
-        'originalPrice': i % 3 == 0 ? (50 + (i * 25)) + 20 : null,
-        'condition': i % 2 == 0 ? 'Neuf' : 'Occasion',
-        'categoryId': randomCategory.id,
-        'location': _generateLocation(),
-        'sellerRating': 4.0 + (i % 10) / 10,
-        'distance': (i % 20) + 1,
-        'isExchangeable': i % 4 == 0,
-        'imageUrl': null, // No real images for mock data
-        'views': (i + 1) * 15,
-        'favorites': (i + 1) * 3,
-      });
+    // Résultats spécifiques pour les offres tactiques/deals
+    if (query.contains('deals') || query.contains('offres')) {
+      print(
+          'SearchScreen: Detected deals/offres query - returning special deals results');
+      return [
+        {
+          'id': '1',
+          'title': 'M4A1 SOPMOD BLOCK II',
+          'price': 280,
+          'originalPrice': 380,
+          'condition': 'TRÈS BON ÉTAT',
+          'seller': 'TACTICOOL_FR',
+          'distance': '5 km',
+          'category': 'replicas',
+          'exchangeable': true,
+        },
+        {
+          'id': '2',
+          'title': 'GILET JPC 2.0 TACTICAL',
+          'price': 120,
+          'originalPrice': 180,
+          'condition': 'COMME NEUF',
+          'seller': 'TACTICAL_STORE',
+          'distance': '3 km',
+          'category': 'tactical',
+          'exchangeable': false,
+        },
+        {
+          'id': '3',
+          'title': 'EOTECH 553 REPLICA',
+          'price': 65,
+          'originalPrice': 95,
+          'condition': 'BON ÉTAT',
+          'seller': 'OPTIC_PRO',
+          'distance': '8 km',
+          'category': 'optics',
+          'exchangeable': true,
+        },
+        {
+          'id': '4',
+          'title': 'AK-74M TACTICAL EDITION',
+          'price': 250,
+          'originalPrice': 320,
+          'condition': 'BON ÉTAT',
+          'seller': 'AIRSOFT_PRO',
+          'distance': '8 km',
+          'category': 'replicas',
+          'exchangeable': false,
+        },
+        {
+          'id': '5',
+          'title': 'CASQUE FAST MARITIME',
+          'price': 85,
+          'originalPrice': 120,
+          'condition': 'NEUF',
+          'seller': 'GEAR_MASTER',
+          'distance': '12 km',
+          'category': 'protection',
+          'exchangeable': false,
+        },
+      ];
     }
 
-    // Apply sorting
-    _applySorting(results);
+    // Résultats spécifiques par catégorie
+    if (query.contains('replicas') || query.contains('répliques')) {
+      return [
+        {
+          'id': '1',
+          'title': 'M4A1 SOPMOD BLOCK II',
+          'price': 380,
+          'originalPrice': 450,
+          'condition': 'TRÈS BON ÉTAT',
+          'seller': 'TACTICOOL_FR',
+          'distance': '5 km',
+          'category': 'replicas',
+          'exchangeable': true,
+        },
+        {
+          'id': '2',
+          'title': 'AK-74M TACTICAL EDITION',
+          'price': 320,
+          'originalPrice': 400,
+          'condition': 'BON ÉTAT',
+          'seller': 'AIRSOFT_PRO',
+          'distance': '8 km',
+          'category': 'replicas',
+          'exchangeable': false,
+        },
+        {
+          'id': '3',
+          'title': 'GLOCK 17 GBB RÉALISTE',
+          'price': 180,
+          'condition': 'COMME NEUF',
+          'seller': 'SIDEARM_SPECIALIST',
+          'distance': '3 km',
+          'category': 'replicas',
+          'exchangeable': true,
+        },
+      ];
+    }
 
-    return results;
-  }
+    if (query.contains('aeg')) {
+      return [
+        {
+          'id': '1',
+          'title': 'M4A1 SOPMOD BLOCK II',
+          'price': 380,
+          'originalPrice': 450,
+          'condition': 'TRÈS BON ÉTAT',
+          'seller': 'TACTICOOL_FR',
+          'distance': '5 km',
+          'category': 'replicas',
+          'exchangeable': true,
+        },
+        {
+          'id': '4',
+          'title': 'HK416 ELITE SERIES',
+          'price': 420,
+          'condition': 'NEUF',
+          'seller': 'PREMIUM_GEAR',
+          'distance': '12 km',
+          'category': 'replicas',
+          'exchangeable': false,
+        },
+      ];
+    }
 
-  String _generateMockTitle(AirsoftCategory category, int index) {
-    final titles = {
-      'repliques_aeg': ['M4A1 Électrique', 'AK-47 AEG', 'G36C Combat'],
-      'repliques_gbb': ['Glock 17 GBB', 'M4 GBBR', 'AK74 Gaz'],
-      'repliques_sniper': ['L96 AWS Sniper', 'M24 SWS', 'SVD Dragunov'],
-      'repliques_shotgun': ['M870 Tactical', 'SPAS-12', 'M4 Breacher'],
-      'repliques_pistol': ['Glock 19 GBB', 'Colt 1911', 'SIG P226'],
-      'protection_masks': ['Masque Dye I5', 'Masque Valken MI-7', 'OneShot V4'],
-      'protection_helmets': [
-        'Casque FAST',
-        'Casque MICH 2000',
-        'Ops-Core FAST'
-      ],
-      'protection_vests': ['Gilet JPC', 'Vest 6094', 'Chest Rig Haley'],
-      'protection_gloves': ['Gants Mechanix', 'Gants 5.11', 'Gants Oakley'],
-    };
+    if (query.contains('masks') || query.contains('masques')) {
+      return [
+        {
+          'id': '5',
+          'title': 'MASQUE PRO-TEC ACH',
+          'price': 95,
+          'condition': 'TRÈS BON ÉTAT',
+          'seller': 'PROTECTION_PLUS',
+          'distance': '6 km',
+          'category': 'protection',
+          'exchangeable': false,
+        },
+        {
+          'id': '6',
+          'title': 'CASQUE FAST MARITIME',
+          'price': 120,
+          'condition': 'NEUF',
+          'seller': 'GEAR_MASTER',
+          'distance': '12 km',
+          'category': 'protection',
+          'exchangeable': false,
+        },
+      ];
+    }
 
-    final categoryTitles = titles[category.id] ?? ['Article ${category.name}'];
-    return '${categoryTitles[index % categoryTitles.length]} - Article ${index + 1}';
-  }
+    if (query.contains('scopes') || query.contains('optiques')) {
+      return [
+        {
+          'id': '7',
+          'title': 'EOTECH 553 REPLICA',
+          'price': 85,
+          'originalPrice': 110,
+          'condition': 'BON ÉTAT',
+          'seller': 'OPTIC_PRO',
+          'distance': '8 km',
+          'category': 'optics',
+          'exchangeable': true,
+        },
+        {
+          'id': '8',
+          'title': 'RED DOT AIMPOINT T1',
+          'price': 65,
+          'condition': 'COMME NEUF',
+          'seller': 'SIGHT_SOLUTIONS',
+          'distance': '4 km',
+          'category': 'optics',
+          'exchangeable': false,
+        },
+      ];
+    }
 
-  String _generateLocation() {
-    final locations = [
-      'Paris',
-      'Lyon',
-      'Marseille',
-      'Toulouse',
-      'Nice',
-      'Nantes'
+    if (query.contains('vests') || query.contains('gilets')) {
+      return [
+        {
+          'id': '9',
+          'title': 'GILET JPC 2.0',
+          'price': 150,
+          'condition': 'COMME NEUF',
+          'seller': 'TACTICAL_STORE',
+          'distance': '3 km',
+          'category': 'tactical',
+          'exchangeable': false,
+        },
+        {
+          'id': '10',
+          'title': 'CHEST RIG MODULAIRE',
+          'price': 85,
+          'condition': 'BON ÉTAT',
+          'seller': 'GEAR_FACTORY',
+          'distance': '7 km',
+          'category': 'tactical',
+          'exchangeable': true,
+        },
+      ];
+    }
+
+    if (query.contains('parts') || query.contains('pièces')) {
+      return [
+        {
+          'id': '11',
+          'title': 'GEARBOX V2 COMPLÈTE SHS',
+          'price': 120,
+          'condition': 'NEUF',
+          'seller': 'MECHANIC_PRO',
+          'distance': '5 km',
+          'category': 'parts',
+          'exchangeable': false,
+        },
+        {
+          'id': '12',
+          'title': 'MOTEUR HIGH TORQUE',
+          'price': 45,
+          'condition': 'TRÈS BON ÉTAT',
+          'seller': 'UPGRADE_SPECIALIST',
+          'distance': '10 km',
+          'category': 'parts',
+          'exchangeable': true,
+        },
+      ];
+    }
+
+    if (query.contains('gbb')) {
+      return [
+        {
+          'id': '13',
+          'title': 'GLOCK 17 GBB RÉALISTE',
+          'price': 180,
+          'condition': 'COMME NEUF',
+          'seller': 'SIDEARM_SPECIALIST',
+          'distance': '3 km',
+          'category': 'replicas',
+          'exchangeable': true,
+        },
+        {
+          'id': '14',
+          'title': 'P226 NAVY SEAL',
+          'price': 165,
+          'condition': 'BON ÉTAT',
+          'seller': 'PISTOL_PRO',
+          'distance': '6 km',
+          'category': 'replicas',
+          'exchangeable': false,
+        },
+      ];
+    }
+
+    // Gestion des catégories principales
+    if (query.contains('protection')) {
+      return [
+        {
+          'id': '5',
+          'title': 'MASQUE PRO-TEC ACH',
+          'price': 95,
+          'condition': 'TRÈS BON ÉTAT',
+          'seller': 'PROTECTION_PLUS',
+          'distance': '6 km',
+          'category': 'protection',
+          'exchangeable': false,
+        },
+        {
+          'id': '6',
+          'title': 'CASQUE FAST MARITIME',
+          'price': 120,
+          'condition': 'NEUF',
+          'seller': 'GEAR_MASTER',
+          'distance': '12 km',
+          'category': 'protection',
+          'exchangeable': false,
+        },
+      ];
+    }
+
+    if (query.contains('equipment') || query.contains('équipement')) {
+      return [
+        {
+          'id': '15',
+          'title': 'SAC À DOS TACTICAL',
+          'price': 75,
+          'condition': 'BON ÉTAT',
+          'seller': 'OUTDOOR_GEAR',
+          'distance': '4 km',
+          'category': 'equipment',
+          'exchangeable': true,
+        },
+        {
+          'id': '16',
+          'title': 'HOLSTER KYDEX',
+          'price': 35,
+          'condition': 'NEUF',
+          'seller': 'HOLSTER_FACTORY',
+          'distance': '8 km',
+          'category': 'equipment',
+          'exchangeable': false,
+        },
+      ];
+    }
+
+    if (query.contains('accessories') || query.contains('accessoires')) {
+      return [
+        {
+          'id': '17',
+          'title': 'POIGNÉE VERTICALE',
+          'price': 25,
+          'condition': 'COMME NEUF',
+          'seller': 'ACCESSORY_SHOP',
+          'distance': '2 km',
+          'category': 'accessories',
+          'exchangeable': false,
+        },
+        {
+          'id': '18',
+          'title': 'SILENCIEUX FOAM',
+          'price': 40,
+          'condition': 'BON ÉTAT',
+          'seller': 'STEALTH_GEAR',
+          'distance': '9 km',
+          'category': 'accessories',
+          'exchangeable': true,
+        },
+      ];
+    }
+
+    // Résultats par défaut (tous les types)
+    return [
+      {
+        'id': '1',
+        'title': 'M4A1 SOPMOD BLOCK II',
+        'price': 380,
+        'originalPrice': 450,
+        'condition': 'TRÈS BON ÉTAT',
+        'seller': 'TACTICOOL_FR',
+        'distance': '5 km',
+        'category': 'replicas',
+        'exchangeable': true,
+      },
+      {
+        'id': '2',
+        'title': 'CASQUE FAST MARITIME',
+        'price': 120,
+        'condition': 'NEUF',
+        'seller': 'GEAR_MASTER',
+        'distance': '12 km',
+        'category': 'protection',
+        'exchangeable': false,
+      },
+      {
+        'id': '3',
+        'title': 'EOTECH 553 REPLICA',
+        'price': 85,
+        'originalPrice': 110,
+        'condition': 'BON ÉTAT',
+        'seller': 'OPTIC_PRO',
+        'distance': '8 km',
+        'category': 'optics',
+        'exchangeable': true,
+      },
+      {
+        'id': '4',
+        'title': 'GILET JPC 2.0',
+        'price': 150,
+        'condition': 'COMME NEUF',
+        'seller': 'TACTICAL_STORE',
+        'distance': '3 km',
+        'category': 'tactical',
+        'exchangeable': false,
+      },
+      {
+        'id': '5',
+        'title': 'AK-74M TACTICAL EDITION',
+        'price': 320,
+        'originalPrice': 400,
+        'condition': 'BON ÉTAT',
+        'seller': 'AIRSOFT_PRO',
+        'distance': '8 km',
+        'category': 'replicas',
+        'exchangeable': false,
+      },
+      {
+        'id': '6',
+        'title': 'GEARBOX V2 COMPLÈTE SHS',
+        'price': 120,
+        'condition': 'NEUF',
+        'seller': 'MECHANIC_PRO',
+        'distance': '5 km',
+        'category': 'parts',
+        'exchangeable': false,
+      },
+      {
+        'id': '7',
+        'title': 'MASQUE PRO-TEC ACH',
+        'price': 95,
+        'condition': 'TRÈS BON ÉTAT',
+        'seller': 'PROTECTION_PLUS',
+        'distance': '6 km',
+        'category': 'protection',
+        'exchangeable': false,
+      },
+      {
+        'id': '8',
+        'title': 'GLOCK 17 GBB RÉALISTE',
+        'price': 180,
+        'condition': 'COMME NEUF',
+        'seller': 'SIDEARM_SPECIALIST',
+        'distance': '3 km',
+        'category': 'replicas',
+        'exchangeable': true,
+      },
+      {
+        'id': '9',
+        'title': 'SAC À DOS TACTICAL',
+        'price': 75,
+        'condition': 'BON ÉTAT',
+        'seller': 'OUTDOOR_GEAR',
+        'distance': '4 km',
+        'category': 'equipment',
+        'exchangeable': true,
+      },
+      {
+        'id': '10',
+        'title': 'RED DOT AIMPOINT T1',
+        'price': 65,
+        'condition': 'COMME NEUF',
+        'seller': 'SIGHT_SOLUTIONS',
+        'distance': '4 km',
+        'category': 'optics',
+        'exchangeable': false,
+      },
     ];
-    return locations[DateTime.now().millisecond % locations.length];
-  }
-
-  void _applySorting(List<Map<String, dynamic>> results) {
-    switch (_sortBy) {
-      case 'price_asc':
-        results
-            .sort((a, b) => (a['price'] as int).compareTo(b['price'] as int));
-        break;
-      case 'price_desc':
-        results
-            .sort((a, b) => (b['price'] as int).compareTo(a['price'] as int));
-        break;
-      case 'recent':
-        // Already in order for mock data
-        break;
-      case 'equipment_first':
-        results.sort((a, b) {
-          final catA = CategoryService.getCategoryById(a['categoryId']);
-          final catB = CategoryService.getCategoryById(b['categoryId']);
-          if (catA?.type == AirsoftCategoryType.protection &&
-              catB?.type != AirsoftCategoryType.protection) return -1;
-          if (catB?.type == AirsoftCategoryType.protection &&
-              catA?.type != AirsoftCategoryType.protection) return 1;
-          return 0;
-        });
-        break;
-    }
-  }
-
-  void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query;
-    });
-
-    // Debounce search
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (_searchQuery == query) {
-        _performSearch();
-      }
-    });
-  }
-
-  void _onCategorySelected(AirsoftCategory category) {
-    setState(() {
-      if (_selectedCategories.contains(category)) {
-        _selectedCategories.remove(category);
-      } else {
-        _selectedCategories.add(category);
-      }
-    });
-    _performSearch();
-  }
-
-  // Utility method to clear all filters - Called from UI elements
-  void _clearFilters() {
-    setState(() {
-      _searchQuery = '';
-      _selectedCategories = [];
-      _minPrice = null;
-      _maxPrice = null;
-      _condition = null;
-      _showOnlyExchangeable = false;
-      _sortBy = 'relevance';
-    });
-    _performSearch();
-  }
-
-  void _toggleAdvancedFilters() {
-    setState(() {
-      _showAdvancedFilters = !_showAdvancedFilters;
-    });
-
-    if (_showAdvancedFilters) {
-      _filterAnimationController.forward();
-    } else {
-      _filterAnimationController.reverse();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFF1A1A1A),
       body: SafeArea(
         child: Column(
           children: [
-            // Header with search bar
-            _buildSearchHeader(),
+            // Header avec barre de recherche
+            Container(
+              color: const Color(0xFF0D0D0D),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Ligne du haut
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2A2A2A),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFF3A3A3A)),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Oswald',
+                              fontSize: 14,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'RECHERCHER...',
+                              hintStyle: TextStyle(
+                                color: Colors.grey[600],
+                                fontFamily: 'Oswald',
+                                fontSize: 14,
+                                letterSpacing: 1,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear,
+                                          color: Colors.grey, size: 20),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _searchResults.clear();
+                                        });
+                                      },
+                                    )
+                                  : null,
+                            ),
+                            onSubmitted: (_) => _performSearch(),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon:
+                            const Icon(Icons.search, color: Color(0xFF8B0000)),
+                        onPressed: _performSearch,
+                      ),
+                    ],
+                  ),
 
-            // Filter chips
-            if (_hasActiveFilters()) _buildFilterChips(),
+                  const SizedBox(height: 12),
 
-            // Advanced filters panel
-            AnimatedBuilder(
-              animation: _filterAnimation,
-              builder: (context, child) {
-                return SizeTransition(
-                  sizeFactor: _filterAnimation,
-                  child: _showAdvancedFilters
-                      ? _buildAdvancedFilters()
-                      : const SizedBox.shrink(),
-                );
-              },
+                  // Filtres rapides
+                  SizedBox(
+                    height: 36,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _quickFilters.length,
+                      itemBuilder: (context, index) {
+                        final filter = _quickFilters[index];
+                        final isActive =
+                            _activeCategories.contains(filter['id']);
+
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  filter['icon'],
+                                  size: 16,
+                                  color:
+                                      isActive ? Colors.white : filter['color'],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  filter['name'],
+                                  style: TextStyle(
+                                    fontFamily: 'Oswald',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isActive
+                                        ? Colors.white
+                                        : filter['color'],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            selected: isActive,
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _activeCategories.add(filter['id']);
+                                } else {
+                                  _activeCategories.remove(filter['id']);
+                                }
+                              });
+                              _performSearch();
+                            },
+                            backgroundColor: const Color(0xFF2A2A2A),
+                            selectedColor: filter['color'],
+                            side: BorderSide(
+                              color: isActive
+                                  ? filter['color']
+                                  : const Color(0xFF3A3A3A),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
 
-            // Action bar with sort and filter buttons
-            _buildActionBar(),
+            // Barre de filtres et tri
+            Container(
+              color: const Color(0xFF0D0D0D),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // Bouton filtres avancés
+                  OutlinedButton.icon(
+                    onPressed: _showAdvancedFilters,
+                    icon: const Icon(Icons.tune, size: 16),
+                    label: Text(
+                      'FILTRES',
+                      style: const TextStyle(
+                        fontFamily: 'Oswald',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xFF3A3A3A)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                    ),
+                  ),
 
-            // Results
+                  const Spacer(),
+
+                  // Dropdown de tri
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFF3A3A3A)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: DropdownButton<String>(
+                      value: _selectedSort,
+                      isDense: true,
+                      underline: const SizedBox(),
+                      dropdownColor: const Color(0xFF2A2A2A),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Oswald',
+                        fontSize: 12,
+                      ),
+                      icon:
+                          const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                      items: _sortOptions.entries.map((entry) {
+                        return DropdownMenuItem(
+                          value: entry.key,
+                          child: Text(entry.value),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedSort = value!;
+                        });
+                        _performSearch();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Résultats
             Expanded(
-              child: _isLoading
-                  ? _buildLoadingState()
+              child: _isSearching
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF8B0000),
+                      ),
+                    )
                   : _searchResults.isEmpty
                       ? _buildEmptyState()
                       : _buildResultsList(),
@@ -297,927 +755,478 @@ class _SearchScreenNewState extends State<SearchScreenNew>
     );
   }
 
-  Widget _buildSearchHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Branded header
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: GeartedColors.primaryBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.arrow_back,
-                    color: GeartedColors.primaryBlue,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'RECHERCHE TACTIQUE',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  fontFamily: 'Oswald',
-                  letterSpacing: 1.2,
-                  color: Colors.black,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [GeartedColors.primaryBlue, GeartedColors.accent],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.military_tech,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Advanced search bar
-          AdvancedSearchBar(
-            onSearchChanged: _onSearchChanged,
-            onSuggestionSelected: (suggestion) {
-              _onSearchChanged(suggestion);
-            },
-            initialValue: _searchQuery,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChips() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SizedBox(
-        height: 40,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: [
-            // Category chips
-            ..._selectedCategories.map((category) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(
-                      category.name,
-                      style: const TextStyle(
-                        fontFamily: 'Oswald',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                    avatar: Icon(
-                      Icons.category,
-                      size: 16,
-                      color: GeartedColors.getCategoryColor(category.id),
-                    ),
-                    selected: true,
-                    onSelected: (_) => _onCategorySelected(category),
-                    selectedColor: GeartedColors.getCategoryColor(category.id)
-                        .withOpacity(0.8),
-                    backgroundColor: GeartedColors.getCategoryColor(category.id)
-                        .withOpacity(0.15),
-                    labelStyle: TextStyle(
-                        color: GeartedColors.getCategoryColor(category.id)),
-                  ),
-                )),
-
-            // Price filter chip
-            if (_minPrice != null || _maxPrice != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  label: Text(
-                    'Prix: ${_minPrice?.toInt() ?? 0}€ - ${_maxPrice?.toInt() ?? '∞'}€',
-                    style: const TextStyle(
-                      fontFamily: 'Oswald',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                  avatar: const Icon(Icons.euro, size: 16, color: Colors.green),
-                  selected: true,
-                  onSelected: (_) => setState(() {
-                    _minPrice = null;
-                    _maxPrice = null;
-                  }),
-                  selectedColor: Colors.green.withOpacity(0.8),
-                  backgroundColor: Colors.green.withOpacity(0.15),
-                  labelStyle: const TextStyle(color: Colors.green),
-                ),
-              ),
-
-            // Condition filter chip
-            if (_condition != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  label: Text(
-                    _condition!,
-                    style: const TextStyle(
-                      fontFamily: 'Oswald',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                  avatar:
-                      const Icon(Icons.star, size: 16, color: Colors.orange),
-                  selected: true,
-                  onSelected: (_) => setState(() => _condition = null),
-                  selectedColor: Colors.orange.withOpacity(0.8),
-                  backgroundColor: Colors.orange.withOpacity(0.15),
-                  labelStyle: const TextStyle(color: Colors.orange),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAdvancedFilters() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Price range
-          const Text(
-            'Fourchette de prix',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Oswald',
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Prix min (€)',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    setState(() {
-                      _minPrice = double.tryParse(value);
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Prix max (€)',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    setState(() {
-                      _maxPrice = double.tryParse(value);
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // Condition
-          const Text(
-            'État',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Oswald',
-            ),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _condition,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-            hint: const Text('Sélectionner un état'),
-            items: [
-              'Neuf',
-              'Comme neuf',
-              'Très bon état',
-              'Bon état',
-              'État correct'
-            ]
-                .map((condition) => DropdownMenuItem(
-                      value: condition,
-                      child: Text(condition),
-                    ))
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                _condition = value;
-              });
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          // Exchange option
-          SwitchListTile(
-            title: const Text(
-              'Échange possible uniquement',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-            value: _showOnlyExchangeable,
-            onChanged: (value) {
-              setState(() {
-                _showOnlyExchangeable = value;
-              });
-            },
-            activeColor: GeartedColors.primaryBlue,
-            contentPadding: EdgeInsets.zero,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Action buttons
-          Row(
-            children: [
-              // Clear filters button
-              Expanded(
-                flex: 1,
-                child: OutlinedButton(
-                  onPressed: () {
-                    _clearFilters();
-                    _toggleAdvancedFilters();
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'EFFACER',
-                    style: TextStyle(
-                      fontFamily: 'Oswald',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Apply filters button
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _performSearch();
-                    _toggleAdvancedFilters();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: GeartedColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'APPLIQUER',
-                    style: TextStyle(
-                      fontFamily: 'Oswald',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Results count
-          if (_searchResults.isNotEmpty)
-            Text(
-              '${_searchResults.length} RÉSULTATS',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Oswald',
-                letterSpacing: 0.5,
-              ),
-            ),
-
-          const Spacer(),
-
-          // Filter button
-          OutlinedButton.icon(
-            onPressed: _toggleAdvancedFilters,
-            icon: Icon(
-              _showAdvancedFilters ? Icons.expand_less : Icons.expand_more,
-              size: 18,
-            ),
-            label: Text('Filtres${_getActiveFilterCount()}'),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: GeartedColors.primaryBlue),
-              foregroundColor: GeartedColors.primaryBlue,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Sort button
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              setState(() {
-                _sortBy = value;
-              });
-              _performSearch();
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'relevance',
-                child: Text('Pertinence'),
-              ),
-              const PopupMenuItem(
-                value: 'price_asc',
-                child: Text('Prix croissant'),
-              ),
-              const PopupMenuItem(
-                value: 'price_desc',
-                child: Text('Prix décroissant'),
-              ),
-              const PopupMenuItem(
-                value: 'recent',
-                child: Text('Plus récent'),
-              ),
-              const PopupMenuItem(
-                value: 'equipment_first',
-                child: Text('Équipement d\'abord'),
-              ),
-            ],
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.sort, size: 18),
-                  const SizedBox(width: 4),
-                  Text(_getSortLabel()),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.65,
-      ),
-      itemCount: 8,
-      itemBuilder: (context, index) => _buildSkeletonCard(),
-    );
-  }
-
-  Widget _buildSkeletonCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image skeleton
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-              ),
-            ),
-          ),
-
-          // Content skeleton
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 100,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    width: 60,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildEmptyState() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey.shade300, width: 2),
-              ),
-              child: Icon(
-                Icons.search_off,
-                size: 64,
-                color: Colors.grey.shade400,
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: Colors.grey[700],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'AUCUN RÉSULTAT',
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontFamily: 'Oswald',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
             ),
-
-            const SizedBox(height: 24),
-
-            const Text(
-              'AUCUN RÉSULTAT TROUVÉ',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'Oswald',
-                letterSpacing: 1.2,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'ESSAYEZ AVEC D\'AUTRES CRITÈRES',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontFamily: 'Oswald',
+              fontSize: 14,
             ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              'Ajustez vos critères ou découvrez nos suggestions',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                fontFamily: 'Oswald',
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 32),
-
-            // Category suggestions
-            const Text(
-              'CATÉGORIES POPULAIRES',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Oswald',
-                letterSpacing: 0.5,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Mini category grid
-            SizedBox(
-              height: 200,
-              child: CategoryGridWidget(
-                onCategorySelected: _onCategorySelected,
-                selectedCategoryId: _selectedCategories.isNotEmpty
-                    ? _selectedCategories.first.id
-                    : null,
-                showPopularOnly: true,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildResultsList() {
-    return GridView.builder(
-      controller: _scrollController,
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.65,
-      ),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final item = _searchResults[index];
-        final category = CategoryService.getCategoryById(item['categoryId']);
-        return _buildProductCard(item, category);
+        return _buildResultItem(item);
       },
     );
   }
 
-  Widget _buildProductCard(
-      Map<String, dynamic> item, AirsoftCategory? category) {
-    final isNew = item['condition'] == 'Neuf';
-    final hasDiscount = item['originalPrice'] != null;
-    final isExchangeable = item['isExchangeable'] == true;
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: category != null
-              ? GeartedColors.getCategoryColor(category.id).withOpacity(0.3)
-              : Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+  Widget _buildResultItem(Map<String, dynamic> item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2A2A),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF3A3A3A)),
       ),
       child: InkWell(
         onTap: () => context.push('/listing/${item['id']}'),
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image with badges
-            Expanded(
-              flex: 3,
-              child: Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.image,
-                      size: 48,
-                      color: Colors.grey.shade400,
-                    ),
-                  ),
-
-                  // Condition badge
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(
-                          color: isNew ? Colors.green : Colors.orange,
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        isNew ? 'NEUF' : 'OCCASION',
-                        style: TextStyle(
-                          color: isNew ? Colors.green : Colors.orange,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: 'Oswald',
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Discount badge
-                  if (hasDiscount)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(
-                            color: Colors.red,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          '-${(((item['originalPrice'] - item['price']) / item['originalPrice']) * 100).round()}%',
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'Oswald',
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Exchange badge
-                  if (isExchangeable)
-                    Positioned(
-                      bottom: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(
-                            color: GeartedColors.primaryBlue,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          'ÉCHANGE',
-                          style: TextStyle(
-                            color: GeartedColors.primaryBlue,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Oswald',
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Image placeholder
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.image, color: Colors.grey, size: 40),
               ),
-            ),
 
-            // Content
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
+              const SizedBox(width: 12),
+
+              // Infos produit
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
+                    // Titre
                     Text(
                       item['title'],
                       style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                         fontFamily: 'Oswald',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
 
-                    // Category
-                    if (category != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: GeartedColors.getCategoryColor(category.id)
-                              .withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Text(
-                          category.name,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: GeartedColors.getCategoryColor(category.id),
-                            fontFamily: 'Oswald',
-                          ),
-                        ),
-                      ),
-
-                    const Spacer(),
-
-                    // Price
+                    // Prix
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           '${item['price']}€',
                           style: const TextStyle(
+                            color: Color(0xFF4CAF50),
                             fontSize: 18,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.bold,
                             fontFamily: 'Oswald',
-                            color: Colors.green,
-                            letterSpacing: 0.5,
                           ),
                         ),
-                        if (hasDiscount) ...[
+                        if (item['originalPrice'] != null) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              '${item['originalPrice']}€',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                          ),
                           const SizedBox(width: 6),
-                          Text(
-                            '${item['originalPrice']}€',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              decoration: TextDecoration.lineThrough,
-                              color: Colors.grey,
-                              fontFamily: 'Oswald',
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF8B0000),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '-${(((item['originalPrice'] - item['price']) / item['originalPrice']) * 100).round()}%',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
                       ],
                     ),
 
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
 
-                    // Seller info and distance
+                    // Infos vendeur et condition
                     Row(
                       children: [
-                        const Icon(Icons.verified_user,
-                            size: 12, color: Colors.green),
+                        Icon(Icons.person, color: Colors.grey[600], size: 14),
                         const SizedBox(width: 4),
-                        Text(
-                          '${item['sellerRating']}★',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.green,
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Text(
+                            item['seller'],
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                              fontFamily: 'Oswald',
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Spacer(),
-                        const Icon(Icons.location_on,
-                            size: 12, color: Colors.grey),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${item['distance']}km',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
+                        const SizedBox(width: 6),
+                        Icon(Icons.location_on,
+                            color: Colors.grey[600], size: 14),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            item['distance'],
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    // Tags
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3A3A3A),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            item['condition'],
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 10,
+                              fontFamily: 'Oswald',
+                            ),
+                          ),
+                        ),
+                        if (item['exchangeable']) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2F4F2F),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.swap_horiz,
+                                    color: Colors.white, size: 12),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'ÉCHANGE',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontFamily: 'Oswald',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              // Bouton favori
+              IconButton(
+                icon: const Icon(Icons.favorite_border, color: Colors.grey),
+                onPressed: () {
+                  // Toggle favorite
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  bool _hasActiveFilters() {
-    return _selectedCategories.isNotEmpty ||
-        _minPrice != null ||
-        _maxPrice != null ||
-        _condition != null ||
-        _showOnlyExchangeable ||
-        _searchQuery.isNotEmpty;
-  }
+  void _showAdvancedFilters() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A1A),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Text(
+                        'FILTRES AVANCÉS',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Oswald',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
 
-  String _getActiveFilterCount() {
-    int count = 0;
-    if (_selectedCategories.isNotEmpty) count += _selectedCategories.length;
-    if (_minPrice != null || _maxPrice != null) count++;
-    if (_condition != null) count++;
-    if (_showOnlyExchangeable) count++;
+                  const SizedBox(height: 24),
 
-    return count > 0 ? ' ($count)' : '';
-  }
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Prix
+                          Text(
+                            'FOURCHETTE DE PRIX',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontFamily: 'Oswald',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          RangeSlider(
+                            values: _priceRange,
+                            min: 0,
+                            max: 1000,
+                            divisions: 20,
+                            activeColor: const Color(0xFF8B0000),
+                            inactiveColor: const Color(0xFF3A3A3A),
+                            labels: RangeLabels(
+                              '${_priceRange.start.round()}€',
+                              '${_priceRange.end.round()}€',
+                            ),
+                            onChanged: (values) {
+                              setModalState(() {
+                                _priceRange = values;
+                              });
+                            },
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${_priceRange.start.round()}€',
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                                Text(
+                                  '${_priceRange.end.round()}€',
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                              ],
+                            ),
+                          ),
 
-  String _getSortLabel() {
-    switch (_sortBy) {
-      case 'price_asc':
-        return 'Prix ↑';
-      case 'price_desc':
-        return 'Prix ↓';
-      case 'recent':
-        return 'Récent';
-      case 'equipment_first':
-        return 'Équipement';
-      default:
-        return 'Pertinence';
-    }
+                          const SizedBox(height: 32),
+
+                          // État
+                          Text(
+                            'ÉTAT',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontFamily: 'Oswald',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _conditions.map((condition) {
+                              final isSelected =
+                                  _selectedCondition == condition;
+                              return ChoiceChip(
+                                label: Text(
+                                  condition,
+                                  style: TextStyle(
+                                    fontFamily: 'Oswald',
+                                    fontSize: 12,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.grey[400],
+                                  ),
+                                ),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setModalState(() {
+                                    _selectedCondition =
+                                        selected ? condition : null;
+                                  });
+                                },
+                                backgroundColor: const Color(0xFF2A2A2A),
+                                selectedColor: const Color(0xFF2F4F2F),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? const Color(0xFF2F4F2F)
+                                      : const Color(0xFF3A3A3A),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          // Échange possible
+                          SwitchListTile(
+                            title: Text(
+                              'ÉCHANGE POSSIBLE UNIQUEMENT',
+                              style: TextStyle(
+                                color: Colors.grey[300],
+                                fontFamily: 'Oswald',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            value: _exchangeOnly,
+                            onChanged: (value) {
+                              setModalState(() {
+                                _exchangeOnly = value;
+                              });
+                            },
+                            activeColor: const Color(0xFF8B0000),
+                            inactiveTrackColor: const Color(0xFF3A3A3A),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Boutons d'action
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              _priceRange = const RangeValues(0, 1000);
+                              _selectedCondition = null;
+                              _exchangeOnly = false;
+                            });
+                            Navigator.pop(context);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.grey[400],
+                            side: BorderSide(color: Colors.grey[600]!),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            'RÉINITIALISER',
+                            style: const TextStyle(
+                              fontFamily: 'Oswald',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _performSearch();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8B0000),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            'APPLIQUER',
+                            style: const TextStyle(
+                              fontFamily: 'Oswald',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }

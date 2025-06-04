@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'config/theme.dart';
-import 'config/oauth_config.dart';
 import 'routes/app_router.dart';
 
 Future<void> main() async {
@@ -10,9 +9,6 @@ Future<void> main() async {
 
   // Charger les variables d'environnement
   await dotenv.load(fileName: ".env");
-
-  // Vérifier la configuration OAuth
-  OAuthConfig.printConfig();
 
   // TODO: Initialiser Firebase ici
 

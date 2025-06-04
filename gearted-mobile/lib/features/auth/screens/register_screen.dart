@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
-import '../../../config/oauth_config.dart';
 import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
 import '../../../services/auth_service.dart';
@@ -183,11 +182,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      if (!OAuthConfig.isGoogleConfigured) {
-        throw Exception(
-            'Configuration Google manquante. Veuillez configurer les identifiants Google dans le fichier .env');
-      }
-
       final result = await _authService.signInWithGoogle();
 
       if (result != null && context.mounted) {
@@ -195,24 +189,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        // Show a more descriptive error
-        String errorMessage = 'Erreur d\'inscription Google';
-        if (e.toString().contains('configuration') ||
-            e.toString().contains('.env')) {
-          errorMessage =
-              'Configuration OAuth incomplète. Contactez le support technique.';
-        }
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text('Erreur d\'inscription Google: ${e.toString()}'),
             backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Détails',
-              onPressed: () =>
-                  _showErrorDialog('Erreur Google OAuth', e.toString()),
-              textColor: Colors.white,
-            ),
           ),
         );
       }
@@ -231,11 +211,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      if (!OAuthConfig.isFacebookConfigured) {
-        throw Exception(
-            'Configuration Facebook manquante. Veuillez configurer les identifiants Facebook dans le fichier .env');
-      }
-
       final result = await _authService.signInWithFacebook();
 
       if (result != null && context.mounted) {
@@ -243,24 +218,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        // Show a more descriptive error
-        String errorMessage = 'Erreur d\'inscription Facebook';
-        if (e.toString().contains('configuration') ||
-            e.toString().contains('.env')) {
-          errorMessage =
-              'Configuration OAuth incomplète. Contactez le support technique.';
-        }
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text('Erreur d\'inscription Facebook: ${e.toString()}'),
             backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Détails',
-              onPressed: () =>
-                  _showErrorDialog('Erreur Facebook OAuth', e.toString()),
-              textColor: Colors.white,
-            ),
           ),
         );
       }
@@ -271,28 +232,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       }
     }
-  }
-
-  void _showErrorDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(
-            child: Text(message),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Fermer'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override

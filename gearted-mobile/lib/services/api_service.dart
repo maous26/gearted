@@ -31,7 +31,7 @@ class ApiService {
           final token = prefs.getString('auth_token');
 
           if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
+            options.headers['Authorization'] = 'Bearer ';
           }
 
           return handler.next(options);
@@ -122,31 +122,16 @@ class ApiService {
   void _handleError(dynamic error) {
     if (error is DioException) {
       final statusCode = error.response?.statusCode;
-      final data = error.response?.data;
-      final message =
-          data is Map ? data['message'] : (error.message ?? 'Erreur réseau');
-
-      // Log more details for debugging
-      print('API Error: Status: $statusCode, Message: $message');
-      print('Request path: ${error.requestOptions.path}');
+      final message = error.response?.data?['message'] ?? error.message;
 
       if (statusCode == 401) {
-        // Auth error, detailed handling
-        if (message.toString().contains('Token invalide') ||
-            message.toString().contains('Accès non autorisé')) {
-          throw Exception(message);
-        }
-        throw Exception('Erreur d\'authentification: $message');
-      } else if (statusCode == 404) {
-        throw Exception('Ressource introuvable: $message');
-      } else if (statusCode == 500) {
-        throw Exception('Erreur serveur: $message');
+        // Gérer les erreurs d'authentification
+        // TODO: Rediriger vers l'écran de connexion
       }
 
       throw Exception(message);
     } else {
-      print('Non-Dio error: ${error.toString()}');
-      throw Exception('Une erreur est survenue: ${error.toString()}');
+      throw Exception('Une erreur est survenue');
     }
   }
 }
