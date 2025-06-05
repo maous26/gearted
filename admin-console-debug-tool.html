@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Console Debug Tool</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        button {
+            background-color: #4F46E5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #3730A3;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        pre {
+            background-color: #f6f8fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            overflow: auto;
+            max-height: 300px;
+            font-size: 14px;
+        }
+        .success {
+            color: #22C55E;
+        }
+        .error {
+            color: #EF4444;
+        }
+        .panel {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .flex {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gearted Admin Console Debug Tool</h1>
+    <p>This tool helps troubleshoot admin console login issues by testing the API connectivity directly from the browser.</p>
+
+    <div class="panel">
+        <h2>Settings</h2>
+        <div>
+            <label for="apiUrl">API Base URL:</label>
+            <input type="text" id="apiUrl" value="http://localhost:3000/api" />
+        </div>
+        <div>
+            <label for="adminEmail">Admin Email:</label>
+            <input type="email" id="adminEmail" value="admin@gearted.com" />
+        </div>
+        <div>
+            <label for="adminPassword">Admin Password:</label>
+            <input type="password" id="adminPassword" value="admin123" />
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Test Login API</h2>
+        <p>Test direct authentication with the backend API:</p>
+        <button id="testLoginBtn">Test Login</button>
+        <pre id="loginResult">Results will appear here...</pre>
+    </div>
+
+    <div class="panel">
+        <h2>Test Admin Access</h2>
+        <p>Test admin API access using the token from login:</p>
+        <button id="testAdminAccessBtn" disabled>Test Admin Access</button>
+        <pre id="adminResult">Login first to get a token...</pre>
+    </div>
+
+    <div class="panel">
+        <h2>CORS Test</h2>
+        <p>Test if CORS is properly configured for the admin console:</p>
+        <button id="testCorsBtn">Test CORS Configuration</button>
+        <pre id="corsResult">Results will appear here...</pre>
+    </div>
+
+    <div class="panel">
+        <h2>Environment Check</h2>
+        <button id="checkEnvBtn">Check Environment</button>
+        <pre id="envResult">Results will appear here...</pre>
+    </div>
+
+    <script>
+        // Store the authentication token
+        let authToken = null;
+
+        async function formatResponse(response) {
+            const clone = response.clone();
+            
+            try {
+                const data = await response.json();
+                return {
+                    status: clone.status,
+                    statusText: clone.statusText,
+                    headers: Object.fromEntries([...clone.headers]),
+                    data
+                };
+            } catch (e) {
+                const text = await clone.text();
+                return {
+                    status: clone.status,
+                    statusText: clone.statusText,
+                    headers: Object.fromEntries([...clone.headers]),
+                    text
+                };
+            }
+        }
+
+        // Login test
+        document.getElementById('testLoginBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('loginResult');
+            resultElement.textContent = 'Testing login...';
+            
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const email = document.getElementById('adminEmail').value;
+                const password = document.getElementById('adminPassword').value;
+                
+                const response = await fetch(`${apiUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+                
+                const formattedResponse = await formatResponse(response);
+                
+                if (response.ok && formattedResponse.data?.token) {
+                    authToken = formattedResponse.data.token;
+                    document.getElementById('testAdminAccessBtn').disabled = false;
+                    resultElement.innerHTML = `<span class="success">✅ LOGIN SUCCESS</span>\n\n${JSON.stringify(formattedResponse, null, 2)}`;
+                } else {
+                    resultElement.innerHTML = `<span class="error">❌ LOGIN FAILED</span>\n\n${JSON.stringify(formattedResponse, null, 2)}`;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        });
+
+        // Admin access test
+        document.getElementById('testAdminAccessBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('adminResult');
+            if (!authToken) {
+                resultElement.textContent = 'Please login first to get a token';
+                return;
+            }
+            
+            resultElement.textContent = 'Testing admin access...';
+            
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                
+                const response = await fetch(`${apiUrl}/admin/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const formattedResponse = await formatResponse(response);
+                
+                if (response.ok) {
+                    resultElement.innerHTML = `<span class="success">✅ ADMIN ACCESS SUCCESS</span>\n\n${JSON.stringify(formattedResponse, null, 2)}`;
+                } else {
+                    resultElement.innerHTML = `<span class="error">❌ ADMIN ACCESS FAILED</span>\n\n${JSON.stringify(formattedResponse, null, 2)}`;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        });
+
+        // CORS test
+        document.getElementById('testCorsBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('corsResult');
+            resultElement.textContent = 'Testing CORS configuration...';
+            
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                
+                // First test with a simple OPTIONS request
+                const optionsResponse = await fetch(`${apiUrl}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': optionsResponse.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': optionsResponse.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': optionsResponse.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': optionsResponse.headers.get('Access-Control-Allow-Credentials')
+                };
+                
+                resultElement.innerHTML = `<span class="${optionsResponse.ok ? 'success' : 'error'}">${optionsResponse.ok ? '✅' : '❌'} CORS TEST</span>\n\nCORS Headers:\n${JSON.stringify(corsHeaders, null, 2)}\n\nStatus: ${optionsResponse.status} ${optionsResponse.statusText}`;
+                
+                // Add analysis of CORS configuration
+                const adminConsoleOrigin = window.location.origin;
+                const allowedOrigins = corsHeaders['Access-Control-Allow-Origin']?.split(/\s*,\s*/) || [];
+                
+                if (allowedOrigins.includes('*')) {
+                    resultElement.innerHTML += '\n\nCORS Analysis: ✅ All origins are allowed (*)';
+                } else if (allowedOrigins.includes(adminConsoleOrigin)) {
+                    resultElement.innerHTML += `\n\nCORS Analysis: ✅ Admin console origin (${adminConsoleOrigin}) is explicitly allowed`;
+                } else {
+                    resultElement.innerHTML += `\n\nCORS Analysis: ❌ Admin console origin (${adminConsoleOrigin}) is NOT explicitly allowed in CORS configuration`;
+                }
+                
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        });
+
+        // Environment check
+        document.getElementById('checkEnvBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('envResult');
+            
+            try {
+                const envInfo = {
+                    'Browser': navigator.userAgent,
+                    'Current Origin': window.location.origin,
+                    'API URL': document.getElementById('apiUrl').value,
+                    'Local Storage Available': !!window.localStorage,
+                    'Cookies Available': navigator.cookieEnabled,
+                    'CORS Mode': 'No CORS mode detected'
+                };
+                
+                resultElement.textContent = JSON.stringify(envInfo, null, 2);
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
