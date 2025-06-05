@@ -13,6 +13,7 @@ import userRoutes from './api/routes/user.routes';
 import listingRoutes from './api/routes/listing.routes';
 import uploadRoutes from './api/routes/upload.routes';
 import healthRoutes from './api/routes/health.routes';
+import adminRoutes from './api/routes/admin.routes';
 
 // Configuration
 config();
@@ -23,7 +24,13 @@ const app: Application = express();
 // Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: [
+    process.env.CLIENT_URL || 'http://localhost:3000',
+    'http://localhost:3001', // Admin console (port 3001)
+    'http://localhost:3002', // Admin console (port 3002)
+    'http://localhost:3003', // Admin console (port 3003)
+    'http://localhost:3005'  // Admin console (port 3005)
+  ],
   credentials: true,
 }));
 app.use(express.json());
@@ -51,6 +58,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Gestion des erreurs
 app.use(errorMiddleware);
