@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../config/theme.dart';
-import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
 import '../../../services/auth_service.dart';
+
+// Army green color for tactical theme
+const Color _armyGreen = Color(0xFF4A5D23);
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -169,9 +170,39 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _loginWithInstagram() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await _authService.signInWithInstagram(context);
+
+      if (result != null && context.mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de connexion Instagram: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1A1A1A), // Dark tactical background
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -181,36 +212,16 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                // Logo
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.settings,
-                      size: 40,
-                      color: GeartedTheme.primaryBlue,
+                // Gearted Logo - Simple Design (Bigger)
+                Center(
+                  child: Container(
+                    width: 180,
+                    height: 180,
+                    child: Image.asset(
+                      'assets/images/GEARTED.png',
+                      fit: BoxFit.contain,
                     ),
-                    const SizedBox(width: 8),
-                    RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Montserrat',
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'Gear',
-                            style: TextStyle(color: GeartedTheme.primaryBlue),
-                          ),
-                          TextSpan(
-                            text: 'ted',
-                            style: TextStyle(color: GeartedTheme.lightBlue),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
 
                 const SizedBox(height: 40),
@@ -221,6 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white, // White text for dark theme
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -262,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       'Mot de passe oublié?',
                       style: TextStyle(
-                        color: GeartedTheme.primaryBlue,
+                        color: _armyGreen,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -272,11 +284,41 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
 
                 // Bouton de connexion
-                GeartedButton(
-                  label: 'Se connecter',
-                  onPressed: _login,
-                  isLoading: _isLoading,
-                  fullWidth: true,
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _armyGreen,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: _armyGreen.withOpacity(0.6),
+                      disabledForegroundColor: Colors.white.withOpacity(0.6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Se connecter',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Oswald',
+                              letterSpacing: 1,
+                            ),
+                          ),
+                  ),
                 ),
 
                 const SizedBox(height: 24),
@@ -286,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Expanded(
                       child: Divider(
-                        color: Colors.grey.shade300,
+                        color: Colors.grey.shade600, // Darker for dark theme
                       ),
                     ),
                     Padding(
@@ -294,13 +336,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'ou',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: Colors.grey.shade400, // Lighter for dark theme
                         ),
                       ),
                     ),
                     Expanded(
                       child: Divider(
-                        color: Colors.grey.shade300,
+                        color: Colors.grey.shade600, // Darker for dark theme
                       ),
                     ),
                   ],
@@ -323,8 +365,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(width: 16),
                     _buildSocialButton(
-                      onPressed: () {},
-                      icon: Icons.apple,
+                      onPressed: _loginWithInstagram,
+                      icon: Icons.camera_alt,
                     ),
                   ],
                 ),
@@ -335,7 +377,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Pas encore de compte?'),
+                    const Text(
+                      'Pas encore de compte?',
+                      style: TextStyle(
+                          color: Colors.white), // White text for dark theme
+                    ),
                     TextButton(
                       onPressed: () {
                         context.go('/register');
@@ -343,7 +389,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'S\'inscrire',
                         style: TextStyle(
-                          color: GeartedTheme.primaryBlue,
+                          color: _armyGreen,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -369,15 +415,16 @@ class _LoginScreenState extends State<LoginScreen> {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2A), // Dark container
           border: Border.all(
-            color: Colors.grey.shade300,
+            color: const Color(0xFF3A3A3A), // Darker border
           ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
           size: 30,
-          color: Colors.grey.shade700,
+          color: _armyGreen, // Army green icons
         ),
       ),
     );
