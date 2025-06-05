@@ -40,51 +40,40 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            // Enhanced visible logo for app bar
-            Container(
-              width: 40,
-              height: 40,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-                border: Border.all(
-                  color: GeartedTheme.lightBlue.withOpacity(0.2),
-                  width: 1,
+        title: Center(
+          child: Container(
+            height: 48,
+            width: 120,
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B0000), // Red background like splash screen
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF8B0000).withOpacity(0.6), // Red glow
+                  spreadRadius: 3,
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: Image.asset(
-                  'assets/images/gearted_transparent.png',
-                  fit: BoxFit.contain,
-                  width: 28,
-                  height: 28,
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  spreadRadius: 1,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
+              ],
+              border: Border.all(
+                color: const Color(0xFF8B0000).withOpacity(0.8), // Red border
+                width: 2,
               ),
             ),
-            const Text(
-              'Gear',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const Text(
-              'ted',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: GeartedTheme.lightBlue,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Image.asset(
+                'assets/images/GEARTED.png',
+                fit: BoxFit.contain,
               ),
             ),
-          ],
+          ),
         ),
         backgroundColor: GeartedTheme.primaryBlue,
         foregroundColor: Colors.white,
@@ -143,6 +132,40 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Gearted Main Logo Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 24, horizontal: 16),
+                      child: Center(
+                        child: Container(
+                          height: 80,
+                          width: 200,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                spreadRadius: 3,
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                            border: Border.all(
+                              color: GeartedTheme.lightBlue.withOpacity(0.3),
+                              width: 2,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Image.asset(
+                              'assets/images/GEARTED.png',
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                       ),

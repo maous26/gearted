@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import '../../../config/theme.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../../widgets/common/gearted_button.dart';
+import '../../../core/constants/category_structure.dart';
+
+// Army green color for seller screen
+const Color _armyGreen = Color(0xFF4A5D23);
 
 class CreateListingScreen extends StatefulWidget {
   const CreateListingScreen({super.key});
@@ -17,26 +22,17 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _tagController = TextEditingController();
-  
-  String _selectedCategory = 'Répliques';
+  final ImagePicker _picker = ImagePicker();
+
+  String? _selectedCategory;
+  String? _selectedSubCategory;
   String _selectedCondition = 'Très bon état';
   bool _isExchangeable = false;
   List<String> _tags = [];
-  List<String> _imageUrls = [];
+  List<XFile> _selectedImages = [];
   bool _isLoading = false;
-  
-  // Options pour les dropdowns - Mise à jour avec les nouvelles catégories
-  final List<Map<String, dynamic>> _categories = [
-    {'name': 'Répliques', 'icon': Icons.gps_fixed},
-    {'name': 'Protection', 'icon': Icons.shield},
-    {'name': 'Équipement', 'icon': Icons.backpack},
-    {'name': 'Accessoires', 'icon': Icons.build},
-    {'name': 'Outils et maintenance', 'icon': Icons.handyman},
-    {'name': 'Communication & électronique', 'icon': Icons.radio},
-    {'name': 'Optiques', 'icon': Icons.center_focus_strong},
-    {'name': 'Batteries', 'icon': Icons.battery_charging_full},
-  ];
-  
+
+  // Options pour les dropdowns - remplacé par CategoryStructure
   final List<Map<String, dynamic>> _conditions = [
     {'name': 'Neuf', 'color': Colors.green, 'icon': Icons.new_releases},
     {'name': 'Comme neuf', 'color': Colors.lightGreen, 'icon': Icons.star},
@@ -70,18 +66,26 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     });
   }
 
-  void _addImage() {
-    // Simuler l'ajout d'une image
-    if (_imageUrls.length < 8) {
-      setState(() {
-        _imageUrls.add('https://example.com/image${_imageUrls.length + 1}.jpg');
-      });
+  Future<void> _addImage() async {
+    if (_selectedImages.length < 8) {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(image);
+        });
+      }
     }
   }
 
   void _removeImage(int index) {
     setState(() {
-      _imageUrls.removeAt(index);
+      _selectedImages.removeAt(index);
     });
   }
 
@@ -89,8 +93,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
-    if (_imageUrls.isEmpty) {
+
+    if (_selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Veuillez ajouter au moins une image'),
@@ -99,15 +103,36 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       );
       return;
     }
-    
+
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez sélectionner une catégorie'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedSubCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez sélectionner une sous-catégorie'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // TODO: Intégrer avec l'API réelle
-      await Future.delayed(const Duration(seconds: 2)); // Simulation d'appel API
-      
+      await Future.delayed(
+          const Duration(seconds: 2)); // Simulation d'appel API
+
       if (context.mounted) {
         // Redirection vers l'écran d'accueil après création réussie
         ScaffoldMessenger.of(context).showSnackBar(
@@ -139,15 +164,20 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor:
+          const Color(0xFF1A1A1A), // Dark background like home screen
       appBar: AppBar(
         title: const Text(
-          'Créer une annonce',
+          'CRÉER UNE ANNONCE',
           style: TextStyle(
-            fontWeight: FontWeight.w600,
+            fontFamily: 'Oswald',
+            fontWeight: FontWeight.w900,
+            fontSize: 18,
+            letterSpacing: 1.5,
+            color: Colors.white,
           ),
         ),
-        backgroundColor: GeartedTheme.primaryBlue,
+        backgroundColor: const Color(0xFF0D0D0D), // Dark tactical color
         foregroundColor: Colors.white,
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -163,16 +193,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: const Color(0xFF2A2A2A), // Dark container
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF3A3A3A)),
                 ),
                 child: Column(
                   children: [
@@ -181,12 +204,15 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: GeartedTheme.primaryBlue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            color: _armyGreen.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _armyGreen.withOpacity(0.3),
+                            ),
                           ),
                           child: Icon(
                             Icons.add_business,
-                            color: GeartedTheme.primaryBlue,
+                            color: _armyGreen,
                             size: 24,
                           ),
                         ),
@@ -196,17 +222,20 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Nouvelle annonce',
+                                'NOUVELLE ANNONCE',
                                 style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Oswald',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 1.2,
                                 ),
                               ),
                               SizedBox(height: 4),
                               Text(
-                                'Vendez votre matériel airsoft rapidement',
+                                'Vendez votre équipement airsoft rapidement',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   color: Colors.grey,
                                 ),
                               ),
@@ -218,23 +247,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Section photos améliorée
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: const Color(0xFF2A2A2A), // Dark container
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF3A3A3A)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,30 +265,37 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       children: [
                         Icon(
                           Icons.photo_camera,
-                          color: GeartedTheme.primaryBlue,
+                          color: _armyGreen,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         const Text(
-                          'Photos de l\'article',
+                          'PHOTOS DE L\'ARTICLE',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Oswald',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
                           ),
                         ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: GeartedTheme.primaryBlue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            color: _armyGreen.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _armyGreen.withOpacity(0.3),
+                            ),
                           ),
                           child: Text(
-                            '${_imageUrls.length}/8',
+                            '${_selectedImages.length}/8',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: GeartedTheme.primaryBlue,
+                              color: _armyGreen,
                             ),
                           ),
                         ),
@@ -276,12 +305,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                     Text(
                       'Ajoutez jusqu\'à 8 photos pour attirer l\'attention des acheteurs',
                       style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                        color: Colors.grey.shade400,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Grille d'images améliorée
                     SizedBox(
                       height: 120,
@@ -290,20 +319,21 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         children: [
                           // Bouton d'ajout d'image amélioré
                           GestureDetector(
-                            onTap: _imageUrls.length < 8 ? _addImage : null,
+                            onTap:
+                                _selectedImages.length < 8 ? _addImage : null,
                             child: Container(
                               width: 120,
                               height: 120,
                               margin: const EdgeInsets.only(right: 12),
                               decoration: BoxDecoration(
-                                color: _imageUrls.length < 8 
-                                    ? GeartedTheme.primaryBlue.withOpacity(0.05)
-                                    : Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(12),
+                                color: _selectedImages.length < 8
+                                    ? const Color(0xFF3A3A3A)
+                                    : const Color(0xFF2A2A2A),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: _imageUrls.length < 8 
-                                      ? GeartedTheme.primaryBlue.withOpacity(0.3)
-                                      : Colors.grey.shade300,
+                                  color: _selectedImages.length < 8
+                                      ? _armyGreen.withOpacity(0.5)
+                                      : Colors.grey.shade700,
                                   width: 2,
                                   style: BorderStyle.solid,
                                 ),
@@ -314,29 +344,34 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                   Icon(
                                     Icons.add_a_photo_rounded,
                                     size: 32,
-                                    color: _imageUrls.length < 8 
-                                        ? GeartedTheme.primaryBlue
-                                        : Colors.grey,
+                                    color: _selectedImages.length < 8
+                                        ? _armyGreen
+                                        : Colors.grey.shade600,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    _imageUrls.length < 8 ? 'Ajouter' : 'Limite atteinte',
+                                    _selectedImages.length < 8
+                                        ? 'AJOUTER'
+                                        : 'LIMITE',
                                     style: TextStyle(
-                                      color: _imageUrls.length < 8 
-                                          ? GeartedTheme.primaryBlue
-                                          : Colors.grey,
+                                      fontFamily: 'Oswald',
+                                      color: _selectedImages.length < 8
+                                          ? _armyGreen
+                                          : Colors.grey.shade600,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 12,
+                                      fontSize: 11,
+                                      letterSpacing: 1,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          
+
                           // Images ajoutées avec design amélioré
-                          ..._imageUrls.asMap().entries.map((entry) {
+                          ..._selectedImages.asMap().entries.map((entry) {
                             final index = entry.key;
+                            final image = entry.value;
                             return Stack(
                               children: [
                                 Container(
@@ -344,43 +379,85 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                   height: 120,
                                   margin: const EdgeInsets.only(right: 12),
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: index == 0 
+                                    color: const Color(0xFF3A3A3A),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: index == 0
                                         ? Border.all(
-                                            color: GeartedTheme.primaryBlue,
+                                            color: _armyGreen,
                                             width: 2,
                                           )
-                                        : null,
+                                        : Border.all(
+                                            color: Colors.grey.shade700,
+                                            width: 1,
+                                          ),
                                   ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.image_rounded,
-                                        size: 32,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                      if (index == 0)
-                                        Container(
-                                          margin: const EdgeInsets.only(top: 4),
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: GeartedTheme.primaryBlue,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Text(
-                                            'Principal',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      File(image.path),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.image_rounded,
+                                              size: 32,
+                                              color: Colors.grey.shade600,
                                             ),
-                                          ),
-                                        ),
-                                    ],
+                                            if (index == 0)
+                                              Container(
+                                                margin: const EdgeInsets.only(
+                                                    top: 4),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: _armyGreen,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: const Text(
+                                                  'Principal',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ),
+                                if (index == 0)
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: _armyGreen,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'PRINCIPAL',
+                                        style: TextStyle(
+                                          fontFamily: 'Oswald',
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 Positioned(
                                   top: 8,
                                   right: 20,
@@ -393,7 +470,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                         shape: BoxShape.circle,
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(0.2),
+                                            color:
+                                                Colors.black.withOpacity(0.2),
                                             spreadRadius: 1,
                                             blurRadius: 3,
                                             offset: const Offset(0, 1),
@@ -417,23 +495,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Section informations principales
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: const Color(0xFF2A2A2A), // Dark container
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF3A3A3A)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,43 +513,50 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: GeartedTheme.primaryBlue,
+                          color: _armyGreen,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         const Text(
-                          'Informations de l\'article',
+                          'INFORMATIONS DE L\'ARTICLE',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Oswald',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Titre
                     TextFormField(
                       controller: _titleController,
                       maxLength: 80,
+                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: 'Titre de l\'annonce',
+                        labelStyle: TextStyle(color: Colors.grey.shade400),
                         hintText: 'Ex: M4A1 Daniel Defense RIS II neuf',
-                        prefixIcon: Icon(Icons.title, color: Colors.grey.shade600),
+                        hintStyle: TextStyle(color: Colors.grey.shade600),
+                        prefixIcon: Icon(Icons.title, color: _armyGreen),
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: const Color(0xFF3A3A3A),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade700),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade700),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: GeartedTheme.primaryBlue, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _armyGreen, width: 2),
                         ),
+                        counterStyle: TextStyle(color: Colors.grey.shade400),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -490,33 +568,38 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         return null;
                       },
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // Description
                     TextFormField(
                       controller: _descriptionController,
                       maxLines: 4,
                       maxLength: 1000,
+                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: 'Description détaillée',
-                        hintText: 'Décrivez votre article : marque, modèle, état, accessoires inclus...',
-                        prefixIcon: Icon(Icons.description, color: Colors.grey.shade600),
+                        labelStyle: TextStyle(color: Colors.grey.shade400),
+                        hintText:
+                            'Décrivez votre article : marque, modèle, état, accessoires inclus...',
+                        hintStyle: TextStyle(color: Colors.grey.shade600),
+                        prefixIcon: Icon(Icons.description, color: _armyGreen),
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: const Color(0xFF3A3A3A),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade700),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade700),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: GeartedTheme.primaryBlue, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _armyGreen, width: 2),
                         ),
                         alignLabelWithHint: true,
+                        counterStyle: TextStyle(color: Colors.grey.shade400),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -528,27 +611,36 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         return null;
                       },
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // Prix
                     TextFormField(
                       controller: _priceController,
                       keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.white),
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                       ],
                       decoration: InputDecoration(
                         labelText: 'Prix de vente (€)',
+                        labelStyle: TextStyle(color: Colors.grey.shade400),
                         hintText: 'Entrez votre prix sans le symbole €',
-                        prefixIcon: Icon(Icons.euro, color: GeartedTheme.primaryBlue),
+                        hintStyle: TextStyle(color: Colors.grey.shade600),
+                        prefixIcon: Icon(Icons.euro, color: _armyGreen),
+                        filled: true,
+                        fillColor: const Color(0xFF3A3A3A),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade700),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade700),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: GeartedTheme.primaryBlue, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: _armyGreen, width: 2),
                         ),
                       ),
                       validator: (value) {
@@ -568,23 +660,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Section catégorie et état
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: const Color(0xFF2A2A2A), // Dark container
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF3A3A3A)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -593,21 +678,24 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       children: [
                         Icon(
                           Icons.tune,
-                          color: GeartedTheme.primaryBlue,
+                          color: _armyGreen,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         const Text(
-                          'Catégorie et état',
+                          'CATÉGORIE ET ÉTAT',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Oswald',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Catégorie - déjà mis à jour plus haut
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -617,57 +705,64 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             Icon(
                               Icons.category,
                               size: 20,
-                              color: GeartedTheme.primaryBlue,
+                              color: _armyGreen,
                             ),
                             const SizedBox(width: 8),
                             const Text(
-                              'Catégorie',
+                              'CATÉGORIE',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontFamily: 'Oswald',
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                letterSpacing: 1,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                            color: const Color(0xFF3A3A3A),
+                            borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.grey.shade300,
+                              color: Colors.grey.shade700,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                spreadRadius: 1,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _selectedCategory,
                               isExpanded: true,
-                              hint: const Text('Sélectionnez une catégorie'),
-                              items: _categories.map((category) {
+                              dropdownColor: const Color(0xFF3A3A3A),
+                              hint: Text(
+                                'Sélectionnez une catégorie',
+                                style: TextStyle(color: Colors.grey.shade400),
+                              ),
+                              items: CategoryStructure.mainCategories
+                                  .map((category) {
                                 return DropdownMenuItem<String>(
-                                  value: category['name'],
+                                  value: category,
                                   child: Row(
                                     children: [
                                       Icon(
-                                        category['icon'],
+                                        CategoryStructure.getCategoryIcon(
+                                                category) ??
+                                            Icons.category,
                                         size: 20,
-                                        color: GeartedTheme.primaryBlue,
+                                        color: _armyGreen,
                                       ),
                                       const SizedBox(width: 12),
-                                      Text(
-                                        category['name'],
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
+                                      Expanded(
+                                        child: Text(
+                                          category,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.white,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -678,6 +773,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                 if (value != null) {
                                   setState(() {
                                     _selectedCategory = value;
+                                    _selectedSubCategory =
+                                        null; // Reset subcategory when category changes
                                   });
                                 }
                               },
@@ -686,9 +783,85 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
+                    // Sous-catégorie (conditionnel)
+                    if (_selectedCategory != null) ...[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.subdirectory_arrow_right,
+                                size: 20,
+                                color: _armyGreen,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'SOUS-CATÉGORIE',
+                                style: TextStyle(
+                                  fontFamily: 'Oswald',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3A3A3A),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedSubCategory,
+                                isExpanded: true,
+                                dropdownColor: const Color(0xFF3A3A3A),
+                                hint: Text(
+                                  'Sélectionnez une sous-catégorie',
+                                  style: TextStyle(color: Colors.grey.shade400),
+                                ),
+                                items: CategoryStructure.getSubCategories(
+                                        _selectedCategory!)
+                                    .map((subCategory) {
+                                  return DropdownMenuItem<String>(
+                                    value: subCategory,
+                                    child: Text(
+                                      subCategory,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      _selectedSubCategory = value;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
                     // État - déjà mis à jour plus haut
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,41 +871,41 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             Icon(
                               Icons.star_rate,
                               size: 20,
-                              color: GeartedTheme.primaryBlue,
+                              color: _armyGreen,
                             ),
                             const SizedBox(width: 8),
                             const Text(
-                              'État de l\'article',
+                              'ÉTAT DE L\'ARTICLE',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontFamily: 'Oswald',
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                letterSpacing: 1,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                            color: const Color(0xFF3A3A3A),
+                            borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.grey.shade300,
+                              color: Colors.grey.shade700,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                spreadRadius: 1,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _selectedCondition,
                               isExpanded: true,
-                              hint: const Text('Sélectionnez l\'état'),
+                              dropdownColor: const Color(0xFF3A3A3A),
+                              hint: Text(
+                                'Sélectionnez l\'état',
+                                style: TextStyle(color: Colors.grey.shade400),
+                              ),
                               items: _conditions.map((condition) {
                                 return DropdownMenuItem<String>(
                                   value: condition['name'],
@@ -749,6 +922,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500,
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ],
@@ -770,23 +944,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Section options avancées
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: const Color(0xFF2A2A2A), // Dark container
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF3A3A3A)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -795,21 +962,24 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       children: [
                         Icon(
                           Icons.settings,
-                          color: GeartedTheme.primaryBlue,
+                          color: _armyGreen,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         const Text(
-                          'Options avancées',
+                          'OPTIONS AVANCÉES',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Oswald',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Tags améliorés
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -819,29 +989,36 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             Icon(
                               Icons.local_offer,
                               size: 18,
-                              color: GeartedTheme.primaryBlue,
+                              color: _armyGreen,
                             ),
                             const SizedBox(width: 8),
                             const Text(
-                              'Tags (optionnel)',
+                              'TAGS (OPTIONNEL)',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontFamily: 'Oswald',
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                letterSpacing: 1,
                               ),
                             ),
                             const Spacer(),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: GeartedTheme.primaryBlue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                                color: _armyGreen.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _armyGreen.withOpacity(0.3),
+                                ),
                               ),
                               child: Text(
                                 '${_tags.length}/5',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: GeartedTheme.primaryBlue,
+                                  color: _armyGreen,
                                 ),
                               ),
                             ),
@@ -852,7 +1029,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                           'Ajoutez des mots-clés pour améliorer la visibilité',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: Colors.grey.shade400,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -861,18 +1038,29 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             Expanded(
                               child: TextField(
                                 controller: _tagController,
+                                style: const TextStyle(color: Colors.white),
                                 decoration: InputDecoration(
                                   hintText: 'Ex: GBBR, Tokyo Marui, neuf...',
+                                  hintStyle:
+                                      TextStyle(color: Colors.grey.shade600),
+                                  filled: true,
+                                  fillColor: const Color(0xFF3A3A3A),
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
-                                      color: Colors.grey.shade300,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade700,
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
-                                      color: GeartedTheme.primaryBlue,
+                                      color: _armyGreen,
                                       width: 2,
                                     ),
                                   ),
@@ -887,24 +1075,27 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton(
-                              onPressed: _tags.length < 5 
+                              onPressed: _tags.length < 5
                                   ? () => _addTag(_tagController.text)
                                   : null,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: GeartedTheme.primaryBlue,
+                                backgroundColor: _armyGreen,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 20,
                                   vertical: 12,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                               child: const Text(
-                                'Ajouter',
+                                'AJOUTER',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Oswald',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
@@ -922,10 +1113,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: GeartedTheme.primaryBlue.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: const Color(0xFF3A3A3A),
+                                  borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: GeartedTheme.primaryBlue.withOpacity(0.3),
+                                    color: _armyGreen.withOpacity(0.5),
                                   ),
                                 ),
                                 child: Row(
@@ -934,9 +1125,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                     Text(
                                       tag,
                                       style: TextStyle(
-                                        fontSize: 12,
+                                        fontFamily: 'Oswald',
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w600,
-                                        color: GeartedTheme.primaryBlue,
+                                        color: Colors.white,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                     const SizedBox(width: 6),
@@ -945,7 +1138,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                       child: Icon(
                                         Icons.close,
                                         size: 16,
-                                        color: GeartedTheme.primaryBlue,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ],
@@ -956,17 +1149,17 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         ],
                       ],
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // Échange possible amélioré
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(12),
+                        color: const Color(0xFF3A3A3A),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.grey.shade200,
+                          color: Colors.grey.shade700,
                         ),
                       ),
                       child: Row(
@@ -974,17 +1167,22 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: _isExchangeable 
-                                  ? GeartedTheme.primaryBlue.withOpacity(0.1)
-                                  : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
+                              color: _isExchangeable
+                                  ? _armyGreen.withOpacity(0.2)
+                                  : const Color(0xFF2A2A2A),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: _isExchangeable
+                                    ? _armyGreen.withOpacity(0.5)
+                                    : Colors.grey.shade700,
+                              ),
                             ),
                             child: Icon(
                               Icons.swap_horiz,
                               size: 20,
-                              color: _isExchangeable 
-                                  ? GeartedTheme.primaryBlue
-                                  : Colors.grey.shade600,
+                              color: _isExchangeable
+                                  ? _armyGreen
+                                  : Colors.grey.shade400,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -993,16 +1191,19 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Échange possible',
+                                  'ÉCHANGE POSSIBLE',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontFamily: 'Oswald',
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    letterSpacing: 1,
                                   ),
                                 ),
                                 Text(
                                   'Acceptez les propositions d\'échange',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: Colors.grey,
                                   ),
                                 ),
@@ -1011,7 +1212,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                           ),
                           Switch(
                             value: _isExchangeable,
-                            activeColor: GeartedTheme.primaryBlue,
+                            activeColor: _armyGreen,
                             onChanged: (value) {
                               setState(() {
                                 _isExchangeable = value;
@@ -1024,31 +1225,32 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Bouton de validation amélioré
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: GeartedTheme.primaryBlue.withOpacity(0.3),
+                      color: _armyGreen.withOpacity(0.4),
                       spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
                 child: GeartedButton(
-                  label: 'Publier l\'annonce',
+                  label: 'PUBLIER L\'ANNONCE',
                   onPressed: _submitForm,
                   isLoading: _isLoading,
                   fullWidth: true,
                   type: GeartedButtonType.accent,
                 ),
               ),
-              
+
               const SizedBox(height: 32),
             ],
           ),

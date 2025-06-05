@@ -783,7 +783,7 @@ class NotificationService {
    */
   async sendOAuthLoginSuccessNotification(
     userId: string,
-    provider: 'google' | 'facebook',
+    provider: 'google' | 'facebook' | 'instagram',
     deviceInfo?: string,
     loginTime?: Date
   ): Promise<void> {
@@ -802,7 +802,7 @@ class NotificationService {
       channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL, NotificationChannel.IN_APP],
       templateData: {
         userName: user.username,
-        provider: provider === 'google' ? 'Google' : 'Facebook',
+        provider: provider === 'google' ? 'Google' : provider === 'facebook' ? 'Facebook' : 'Instagram',
         loginTime: (loginTime || new Date()).toLocaleString('fr-FR'),
         deviceInfo: deviceInfo || 'Appareil non spécifié',
         securityUrl: `${process.env.CLIENT_URL}/settings/security`
@@ -815,7 +815,7 @@ class NotificationService {
    */
   async sendOAuthAccountLinkedNotification(
     userId: string,
-    provider: 'google' | 'facebook'
+    provider: 'google' | 'facebook' | 'instagram'
   ): Promise<void> {
     const user = await User.findById(userId);
     if (!user) {
@@ -832,7 +832,7 @@ class NotificationService {
       channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL, NotificationChannel.IN_APP],
       templateData: {
         userName: user.username,
-        provider: provider === 'google' ? 'Google' : 'Facebook',
+        provider: provider === 'google' ? 'Google' : provider === 'facebook' ? 'Facebook' : 'Instagram',
         profileUrl: `${process.env.CLIENT_URL}/profile`
       }
     });
@@ -843,8 +843,8 @@ class NotificationService {
    */
   async sendAccountMergeRequiredNotification(
     email: string,
-    provider: 'google' | 'facebook',
-    existingProvider: 'local' | 'google' | 'facebook'
+    provider: 'google' | 'facebook' | 'instagram',
+    existingProvider: 'local' | 'google' | 'facebook' | 'instagram'
   ): Promise<void> {
     // Pour cette notification, on n'a pas forcément un userId car le compte n'est pas encore lié
     // On peut chercher l'utilisateur par email pour avoir l'ID
@@ -864,9 +864,10 @@ class NotificationService {
       templateData: {
         userName: user.username,
         email,
-        provider: provider === 'google' ? 'Google' : 'Facebook',
+        provider: provider === 'google' ? 'Google' : provider === 'facebook' ? 'Facebook' : 'Instagram',
         existingProvider: existingProvider === 'local' ? 'email' : 
-                         existingProvider === 'google' ? 'Google' : 'Facebook',
+                         existingProvider === 'google' ? 'Google' : 
+                         existingProvider === 'facebook' ? 'Facebook' : 'Instagram',
         loginUrl: `${process.env.CLIENT_URL}/login`
       }
     });
@@ -877,7 +878,7 @@ class NotificationService {
    */
   async sendNewOAuthProviderAddedNotification(
     userId: string,
-    newProvider: 'google' | 'facebook',
+    newProvider: 'google' | 'facebook' | 'instagram',
     existingProviders: string[]
   ): Promise<void> {
     const user = await User.findById(userId);
@@ -895,7 +896,7 @@ class NotificationService {
       channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL, NotificationChannel.IN_APP],
       templateData: {
         userName: user.username,
-        newProvider: newProvider === 'google' ? 'Google' : 'Facebook',
+        newProvider: newProvider === 'google' ? 'Google' : newProvider === 'facebook' ? 'Facebook' : 'Instagram',
         existingProviders: existingProviders.join(', '),
         settingsUrl: `${process.env.CLIENT_URL}/settings/account`
       }
@@ -907,7 +908,7 @@ class NotificationService {
    */
   async sendOAuthEmailVerificationNotification(
     userId: string,
-    provider: 'google' | 'facebook'
+    provider: 'google' | 'facebook' | 'instagram'
   ): Promise<void> {
     const user = await User.findById(userId);
     if (!user) {
@@ -924,7 +925,7 @@ class NotificationService {
       channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL, NotificationChannel.IN_APP],
       templateData: {
         userName: user.username,
-        provider: provider === 'google' ? 'Google' : 'Facebook',
+        provider: provider === 'google' ? 'Google' : provider === 'facebook' ? 'Facebook' : 'Instagram',
         verificationMethod: 'OAuth',
         profileUrl: `${process.env.CLIENT_URL}/profile`
       }
@@ -937,7 +938,7 @@ class NotificationService {
   async sendOAuthSecurityAlertNotification(
     userId: string,
     alertType: 'suspicious_login' | 'new_device' | 'password_not_set',
-    provider: 'google' | 'facebook',
+    provider: 'google' | 'facebook' | 'instagram',
     details?: Record<string, any>
   ): Promise<void> {
     const user = await User.findById(userId);
@@ -961,7 +962,7 @@ class NotificationService {
       channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL, NotificationChannel.IN_APP],
       templateData: {
         userName: user.username,
-        provider: provider === 'google' ? 'Google' : 'Facebook',
+        provider: provider === 'google' ? 'Google' : provider === 'facebook' ? 'Facebook' : 'Instagram',
         alertType,
         alertMessage: alertMessages[alertType],
         details: JSON.stringify(details || {}),
@@ -976,7 +977,7 @@ class NotificationService {
    */
   async sendOAuthWelcomeNotification(
     userId: string,
-    provider: 'google' | 'facebook',
+    provider: 'google' | 'facebook' | 'instagram',
     isFirstTime: boolean = true
   ): Promise<void> {
     const user = await User.findById(userId);
@@ -998,7 +999,7 @@ class NotificationService {
       channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL, NotificationChannel.IN_APP],
       templateData: {
         userName: user.username,
-        provider: provider === 'google' ? 'Google' : 'Facebook',
+        provider: provider === 'google' ? 'Google' : provider === 'facebook' ? 'Facebook' : 'Instagram',
         isFirstTime: isFirstTime ? 'true' : 'false',
         appUrl: process.env.CLIENT_URL || 'https://gearted.com',
         profileUrl: `${process.env.CLIENT_URL}/profile`,
@@ -1023,6 +1024,7 @@ class NotificationService {
       if (user.provider === 'local' || user.password) connectedProviders.push('email');
       if (user.googleId) connectedProviders.push('google');
       if (user.facebookId) connectedProviders.push('facebook');
+      if (user.instagramId) connectedProviders.push('instagram');
 
       return {
         user,
@@ -1071,6 +1073,7 @@ class NotificationService {
       if (user.password) methodCount++; // Email/password
       if (user.googleId) methodCount++; // Google
       if (user.facebookId) methodCount++; // Facebook
+      if (user.instagramId) methodCount++; // Instagram
 
       return methodCount > 1;
     } catch (error) {

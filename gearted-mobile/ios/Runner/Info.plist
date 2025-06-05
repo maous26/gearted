@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Location permissions -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Cette application utilise votre localisation pour partager votre position et trouver des équipements près de vous.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Cette application utilise votre localisation pour partager votre position et trouver des équipements près de vous.</string>
 </dict>
 </plist>

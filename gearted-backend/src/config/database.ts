@@ -4,16 +4,13 @@ import { logger } from '../utils/logger';
 // Configuration Mongoose
 mongoose.set('strictQuery', false);
 
-// Options de connexion recommandées pour production
+// Options de connexion simplifiées pour development
 const mongooseOptions: ConnectOptions = {
-  maxPoolSize: 10, // Nombre maximum de connexions dans le pool
+  maxPoolSize: 5, // Nombre maximum de connexions dans le pool
   serverSelectionTimeoutMS: 5000, // Timeout de 5s pour la sélection du serveur
-  socketTimeoutMS: 45000, // Timeout de 45s pour les sockets
-  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+  socketTimeoutMS: 20000, // Timeout de 20s pour les sockets
   family: 4, // Use IPv4, skip trying IPv6
   retryWrites: true, // Retry writes on network errors
-  retryReads: true, // Retry reads on network errors
-  compressors: ['zstd', 'zlib'], // Enable compression
 };
 
 const connectDB = async (): Promise<void> => {

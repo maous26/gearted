@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../../widgets/common/state_widgets.dart';
 import '../../../widgets/common/animations.dart';
 
+const Color _armyGreen = Color(0xFF4A5D23);
+
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
 
@@ -104,7 +106,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: conversation['unreadCount'] > 0
-            ? Theme.of(context).primaryColor.withOpacity(0.05)
+            ? _armyGreen.withOpacity(0.05)
             : null,
         borderRadius: BorderRadius.circular(12),
       ),
@@ -158,7 +160,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               style: TextStyle(
                 fontSize: 12,
                 color: conversation['unreadCount'] > 0
-                    ? Theme.of(context).primaryColor
+                    ? _armyGreen
                     : Colors.grey[600],
                 fontWeight: conversation['unreadCount'] > 0
                     ? FontWeight.bold
@@ -189,7 +191,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
+                  color: _armyGreen,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(

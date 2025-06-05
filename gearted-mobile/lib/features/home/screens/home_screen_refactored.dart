@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../services/listings_service.dart';
+import '../../../core/constants/category_structure.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,18 +11,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isRefreshing = false;
   List<Map<String, dynamic>> _hotDeals = [];
   List<Map<String, dynamic>> _recentListings = [];
   Set<String> _favoriteListings = {};
   bool _isLoading = true;
 
-  // Catégories principales avec icônes cohérentes
+  // Catégories principales avec icônes explicites
   final List<Map<String, dynamic>> _mainCategories = [
     {
       'id': 'replicas',
       'name': 'RÉPLIQUES',
-      'icon': Icons.gps_fixed, // Icône de visée/arme tactique
+      'icon': Icons.radio_button_checked, // Cible/viseur circulaire
       'color': const Color(0xFF2E2E2E), // Noir tactique
       'gradient': [const Color(0xFF2E2E2E), const Color(0xFF1A1A1A)],
     },
@@ -42,71 +42,29 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'id': 'accessories',
       'name': 'ACCESSOIRES',
-      'icon': Icons.build,
+      'icon': Icons.tune, // Icône réglages/accessoires
       'color': const Color(0xFF5C5C5C), // Gris métallique
       'gradient': [const Color(0xFF5C5C5C), const Color(0xFF3A3A3A)],
     },
     {
-      'id': 'tools',
-      'name': 'OUTILS ET MAINTENANCE',
-      'icon': Icons.handyman,
-      'color': const Color(0xFF6B4C57), // Brun tactique
-      'gradient': [const Color(0xFF6B4C57), const Color(0xFF4A3640)],
+      'id': 'maintenance',
+      'name': 'OUTILS & MAINT.',
+      'icon': Icons.handyman, // Icône outils
+      'color': const Color(0xFF4B3A2A), // Brun métallique
+      'gradient': [const Color(0xFF4B3A2A), const Color(0xFF2E2319)],
     },
     {
       'id': 'communication',
-      'name': 'COMMUNICATION & ÉLECTRONIQUE',
-      'icon': Icons.radio,
-      'color': const Color(0xFF4A5568), // Gris bleuté
-      'gradient': [const Color(0xFF4A5568), const Color(0xFF2D3748)],
+      'name': 'COMM & ÉLEC.',
+      'icon': Icons.wifi_tethering, // Icône ondes/communication
+      'color': const Color(0xFF2A3B4B), // Bleu nuit
+      'gradient': [const Color(0xFF2A3B4B), const Color(0xFF1A2530)],
     },
   ];
 
-  // Sous-catégories populaires
-  final List<Map<String, dynamic>> _popularSubCategories = [
-    {
-      'id': 'aeg',
-      'name': 'AEG',
-      'icon': Icons.electric_bolt, // Parfait pour électrique ✅
-      'count': '45',
-      'color': const Color(0xFFFFB74D), // Orange plus visible
-    },
-    {
-      'id': 'gbb',
-      'name': 'GBB',
-      'icon': Icons.speed, // Mieux que "air" pour GBB/gaz 🔥
-      'count': '32',
-      'color': const Color(0xFF81C784), // Vert plus visible
-    },
-    {
-      'id': 'masks',
-      'name': 'MASQUES',
-      'icon': Icons.masks, // Icône dédiée masques protection ⭐
-      'count': '28',
-      'color': const Color(0xFF90CAF9), // Bleu plus visible
-    },
-    {
-      'id': 'vests',
-      'name': 'GILETS',
-      'icon': Icons.security, // Parfait pour gilets tactiques ✅
-      'count': '19',
-      'color': const Color(0xFFFFF176), // Jaune plus visible
-    },
-    {
-      'id': 'scopes',
-      'name': 'OPTIQUES',
-      'icon': Icons.center_focus_strong, // Plus précis que zoom_in 🎯
-      'count': '52',
-      'color': const Color(0xFFCE93D8), // Violet plus visible
-    },
-    {
-      'id': 'parts',
-      'name': 'PIÈCES',
-      'icon': Icons.precision_manufacturing, // Plus spécifique que settings 🔧
-      'count': '67',
-      'color': const Color(0xFFFFAB91), // Orange clair plus visible
-    },
-  ];
+  // Sous-catégories populaires récupérées depuis CategoryStructure
+  final List<Map<String, dynamic>> _popularSubCategories =
+      CategoryStructure.popularSubCategories;
 
   @override
   void initState() {
@@ -138,16 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleRefresh() async {
-    setState(() {
-      _isRefreshing = true;
-    });
-
     await _loadListings();
     await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      _isRefreshing = false;
-    });
   }
 
   @override
@@ -157,208 +107,213 @@ class _HomeScreenState extends State<HomeScreen> {
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         color: const Color(0xFF8B0000), // Rouge militaire
-        child: _isRefreshing
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF8B0000),
+        child: CustomScrollView(
+          slivers: [
+            // App Bar tactique
+            SliverAppBar(
+              expandedHeight: 160,
+              floating: false,
+              pinned: true,
+              backgroundColor: const Color(0xFF0D0D0D),
+              flexibleSpace: FlexibleSpaceBar(
+                titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+                title: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Container(
+                    height: 60,
+                    width: 200,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          spreadRadius: 3,
+                          blurRadius: 15,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/images/GEARTED.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-              )
-            : CustomScrollView(
-                slivers: [
-                  // App Bar tactique with always visible logo
-                  SliverAppBar(
-                    expandedHeight: 120,
-                    floating: false,
-                    pinned: true,
-                    backgroundColor: const Color(0xFF0D0D0D),
-                    centerTitle: true,
-                    automaticallyImplyLeading: false,
-                    title: Container(
-                      margin: const EdgeInsets.only(top: 10),
-                      child: Image.asset(
-                        'assets/images/gearted_transparent.png',
-                        height: 90,
-                        width: 90,
-                        fit: BoxFit.contain,
-                      ),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color(0xFF0D0D0D),
+                        const Color(0xFF0D0D0D).withValues(alpha: 0.95),
+                      ],
                     ),
-                    flexibleSpace: FlexibleSpaceBar(
-                      centerTitle: true,
-                      titlePadding: const EdgeInsets.only(bottom: 20),
-                      background: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              const Color(0xFF0D0D0D),
-                              const Color(0xFF0D0D0D).withValues(alpha: 0.95),
-                            ],
-                          ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Pattern militaire subtil
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: CamoPatternPainter(),
                         ),
-                        child: Stack(
-                          children: [
-                            // Pattern militaire subtil
-                            Positioned.fill(
-                              child: CustomPaint(
-                                painter: CamoPatternPainter(),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    actions: [
-                      IconButton(
-                        icon: const Icon(Icons.search, color: Colors.white),
-                        onPressed: () => context.push('/search'),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.notifications_none,
-                            color: Colors.white),
-                        onPressed: () => context.push('/notifications'),
                       ),
                     ],
                   ),
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.search, color: Colors.white),
+                  onPressed: () => context.push('/search'),
+                ),
+                IconButton(
+                  icon:
+                      const Icon(Icons.notifications_none, color: Colors.white),
+                  onPressed: () => context.push('/notifications'),
+                ),
+              ],
+            ),
 
-                  // Barre de recherche tactique
-                  SliverToBoxAdapter(
-                    child: Container(
-                      margin: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2A2A2A),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF3A3A3A)),
-                      ),
-                      child: InkWell(
-                        onTap: () => context.push('/search'),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.search, color: Colors.grey),
-                              const SizedBox(width: 12),
-                              Text(
-                                'RECHERCHER ÉQUIPEMENT TACTIQUE...',
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontFamily: 'Oswald',
-                                  fontSize: 14,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Catégories principales
-                  SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            // Barre de recherche tactique
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF3A3A3A)),
+                ),
+                child: InkWell(
+                  onTap: () => context.push('/search'),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'CATÉGORIES PRINCIPALES',
-                            style: TextStyle(
-                              color: Colors.grey[300],
-                              fontFamily: 'Oswald',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 120,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _mainCategories.length,
-                            itemBuilder: (context, index) {
-                              final category = _mainCategories[index];
-                              return _buildMainCategoryCard(category);
-                            },
+                        const Icon(Icons.search, color: Colors.grey),
+                        const SizedBox(width: 12),
+                        Text(
+                          'RECHERCHER ÉQUIPEMENT TACTIQUE...',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontFamily: 'Oswald',
+                            fontSize: 14,
+                            letterSpacing: 1,
                           ),
                         ),
                       ],
                     ),
                   ),
+                ),
+              ),
+            ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                  // Sous-catégories populaires
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'RECHERCHES POPULAIRES',
-                            style: TextStyle(
-                              color: Colors.grey[300],
-                              fontFamily: 'Oswald',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 1.2,
-                            ),
-                            itemCount: _popularSubCategories.length,
-                            itemBuilder: (context, index) {
-                              final subCategory = _popularSubCategories[index];
-                              return _buildSubCategoryCard(subCategory);
-                            },
-                          ),
-                        ],
+            // Catégories principales
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'CATÉGORIES PRINCIPALES',
+                      style: TextStyle(
+                        color: Colors.grey[300],
+                        fontFamily: 'Oswald',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
                       ),
                     ),
                   ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-                  // Section Offres Tactiques
-                  if (!_isLoading && _hotDeals.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: _buildTacticalDealsSection(),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height:
+                        130, // Augmenté pour accommoder les noms sur 2 lignes
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _mainCategories.length,
+                      itemBuilder: (context, index) {
+                        final category = _mainCategories[index];
+                        return _buildMainCategoryCard(category);
+                      },
                     ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-                  // Section Nouveautés
-                  if (!_isLoading && _recentListings.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: _buildNewArrivalsSection(),
-                    ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                  ),
                 ],
               ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+            // Sous-catégories populaires
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'RECHERCHES POPULAIRES',
+                      style: TextStyle(
+                        color: Colors.grey[300],
+                        fontFamily: 'Oswald',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.2,
+                      ),
+                      itemCount: _popularSubCategories.length,
+                      itemBuilder: (context, index) {
+                        final subCategory = _popularSubCategories[index];
+                        return _buildSubCategoryCard(subCategory);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+            // Section Hot Deals
+            if (!_isLoading && _hotDeals.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _buildHotDealsSection(),
+              ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+            // Section Nouveautés
+            if (!_isLoading && _recentListings.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _buildNewArrivalsSection(),
+              ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMainCategoryCard(Map<String, dynamic> category) {
     return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
+      width: 110, // Réduit pour accommoder 6 catégories
+      margin: const EdgeInsets.only(right: 10),
       child: InkWell(
         onTap: () => context.push('/search?category=${category['id']}'),
         borderRadius: BorderRadius.circular(8),
@@ -381,17 +336,23 @@ class _HomeScreenState extends State<HomeScreen> {
               Icon(
                 category['icon'],
                 color: Colors.white,
-                size: 36,
+                size: 32,
               ),
-              const SizedBox(height: 8),
-              Text(
-                category['name'],
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Oswald',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  category['name'],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Oswald',
+                    fontSize: 11, // Réduit pour les noms longs
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                    height: 1.2,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
                 ),
               ),
             ],
@@ -420,15 +381,15 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(
               subCategory['icon'],
               color: subCategory['color'],
-              size: 32, // Augmenté de 24 à 32
+              size: 24,
             ),
-            const SizedBox(height: 6), // Augmenté de 4 à 6
+            const SizedBox(height: 4),
             Text(
               subCategory['name'],
               style: const TextStyle(
                 color: Colors.white,
                 fontFamily: 'Oswald',
-                fontSize: 13, // Augmenté de 11 à 13
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
               ),
@@ -436,9 +397,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               '${subCategory['count']} articles',
               style: TextStyle(
-                color: Colors.grey[400], // Plus visible que grey[500]
-                fontSize: 11, // Augmenté de 9 à 11
-                fontWeight: FontWeight.w400,
+                color: Colors.grey[500],
+                fontSize: 9,
               ),
             ),
           ],
@@ -447,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTacticalDealsSection() {
+  Widget _buildHotDealsSection() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -468,7 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.white, size: 16),
                     const SizedBox(width: 6),
                     Text(
-                      'OFFRES TACTIQUES',
+                      'HOT DEALS',
                       style: const TextStyle(
                         color: Colors.white,
                         fontFamily: 'Oswald',
@@ -594,7 +554,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Image avec badge promo
             Container(
-              height: 120,
+              height: 105,
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: const BorderRadius.only(
@@ -649,7 +609,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             // Infos produit
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -662,10 +622,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontFamily: 'Oswald',
                       letterSpacing: 0.5,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  if (deal['subcategory'] != null) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      deal['subcategory'],
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 10,
+                        fontFamily: 'Oswald',
+                        letterSpacing: 0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Text(
@@ -690,7 +664,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     deal['condition'] ?? '',
                     style: TextStyle(
@@ -776,9 +750,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontFamily: 'Oswald',
                         letterSpacing: 0.5,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (listing['subcategory'] != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        listing['subcategory'],
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 10,
+                          fontFamily: 'Oswald',
+                          letterSpacing: 0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     const Spacer(),
                     Text(
                       '${listing['price']}€',

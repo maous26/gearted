@@ -1,7 +1,9 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'instagram_auth_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -97,6 +99,38 @@ class AuthService {
     }
   }
 
+  // Instagram Sign In
+  Future<Map<String, dynamic>?> signInWithInstagram(
+      BuildContext context) async {
+    try {
+      final instagramData =
+          await InstagramAuthService.signInWithInstagramWebView(context);
+
+      if (instagramData == null) {
+        return null; // L'utilisateur a annulé la connexion
+      }
+
+      // Envoyer les données au backend
+      final response = await _apiService.post('/auth/instagram/mobile', {
+        'accessToken': instagramData['access_token'],
+        'userId': instagramData['user']['id'],
+        'username': instagramData['user']['username'],
+        'fullName': instagramData['user']['full_name'],
+        'profilePicture': instagramData['user']['profile_picture'],
+      });
+
+      // Sauvegarder le token
+      if (response['token'] != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', response['token']);
+      }
+
+      return response;
+    } catch (error) {
+      rethrow;
+    }
+  }
+
   // Email/Password Sign In
   Future<Map<String, dynamic>> signInWithEmail(
       String email, String password) async {
@@ -127,6 +161,9 @@ class AuthService {
 
       // Déconnexion Facebook
       await FacebookAuth.instance.logOut();
+
+      // Note: Instagram logout is typically handled by clearing local tokens
+      // as Instagram doesn't provide a direct logout method in their API
 
       // Déconnexion de l'API
       await _apiService.logout();

@@ -7,10 +7,18 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/home/screens/home_screen_refactored.dart';
 import '../features/search/screens/search_screen_new.dart';
+import '../features/search/screens/advanced_search_screen.dart';
 import '../features/listing/screens/create_listing_screen.dart';
 import '../features/listing/screens/listing_detail_screen.dart';
+import '../features/listing/screens/my_listings_screen.dart';
 import '../features/chat/screens/chat_list_screen.dart';
+import '../features/chat/screens/chat_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
+import '../features/profile/screens/edit_profile_screen.dart';
+import '../features/favorites/screens/favorites_screen.dart';
+import '../features/notifications/screens/notifications_screen.dart';
+import '../features/settings/screens/settings_screen.dart';
+import '../features/showcase/screens/features_showcase_screen.dart';
 
 GoRouter createRouter() {
   return GoRouter(
@@ -112,6 +120,53 @@ GoRouter createRouter() {
           final listingId = state.pathParameters['id'] ?? '';
           return ListingDetailScreen(listingId: listingId);
         },
+      ),
+
+      // Chat individuel
+      GoRoute(
+        path: '/chat/:chatId',
+        builder: (context, state) {
+          final chatId = state.pathParameters['chatId'] ?? '';
+          final chatName = state.uri.queryParameters['name'] ?? 'Chat';
+          return ChatScreen(
+            chatId: chatId,
+            chatName: chatName,
+          );
+        },
+      ),
+
+      // Profil et paramètres
+      GoRoute(
+        path: '/edit-profile',
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/my-listings',
+        builder: (context, state) => const MyListingsScreen(),
+      ),
+      GoRoute(
+        path: '/favorites',
+        builder: (context, state) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+
+      // Recherche avancée
+      GoRoute(
+        path: '/advanced-search',
+        builder: (context, state) => const AdvancedSearchScreen(),
+      ),
+
+      // Fonctionnalités
+      GoRoute(
+        path: '/features-showcase',
+        builder: (context, state) => const FeaturesShowcaseScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

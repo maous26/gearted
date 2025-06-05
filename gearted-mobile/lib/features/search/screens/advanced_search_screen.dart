@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/category_structure.dart';
 
 class AdvancedSearchScreen extends StatefulWidget {
   const AdvancedSearchScreen({super.key});
@@ -13,23 +14,13 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   final TextEditingController _maxPriceController = TextEditingController();
 
   String? _selectedCategory;
+  String? _selectedSubCategory;
   String? _selectedCondition;
   String? _selectedLocation;
   String _sortBy = 'recent';
   bool _priceNegotiable = false;
 
-  final List<String> _categories = [
-    'Répliques électriques',
-    'Répliques à gaz',
-    'Répliques à ressort',
-    'Équipements tactiques',
-    'Optiques',
-    'Accessoires',
-    'Pièces détachées',
-    'Vêtements',
-    'Protection',
-  ];
-
+  // Remplacé par CategoryStructure.mainCategories
   final List<String> _conditions = [
     'Neuf',
     'Comme neuf',
@@ -170,10 +161,27 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
               _buildDropdown<String>(
                 hint: 'Sélectionner une catégorie',
                 value: _selectedCategory,
-                items: _categories,
-                onChanged: (value) => setState(() => _selectedCategory = value),
+                items: CategoryStructure.mainCategories,
+                onChanged: (value) => setState(() {
+                  _selectedCategory = value;
+                  _selectedSubCategory =
+                      null; // Reset subcategory when category changes
+                }),
               ),
             ),
+
+            // Subcategory (conditional)
+            if (_selectedCategory != null)
+              _buildFilterSection(
+                'Sous-catégorie',
+                _buildDropdown<String>(
+                  hint: 'Sélectionner une sous-catégorie',
+                  value: _selectedSubCategory,
+                  items: CategoryStructure.getSubCategories(_selectedCategory!),
+                  onChanged: (value) =>
+                      setState(() => _selectedSubCategory = value),
+                ),
+              ),
 
             // Price range
             _buildFilterSection(

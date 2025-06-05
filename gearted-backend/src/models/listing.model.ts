@@ -16,6 +16,7 @@ export interface IListing extends Document {
   imageUrls: string[];
   condition: ListingCondition;
   category: string;
+  subcategory: string;
   tags: string[];
   isExchangeable: boolean;
   isSold: boolean;
@@ -58,6 +59,11 @@ const listingSchema = new Schema<IListing>(
     category: {
       type: String,
       required: [true, 'La catégorie est requise'],
+      trim: true,
+    },
+    subcategory: {
+      type: String,
+      required: [true, 'La sous-catégorie est requise'],
       trim: true,
     },
     tags: {

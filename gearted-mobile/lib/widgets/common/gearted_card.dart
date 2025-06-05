@@ -8,6 +8,8 @@ class GeartedItemCard extends StatelessWidget {
   final double price;
   final double? originalPrice;
   final String condition;
+  final String? category;
+  final String? subcategory;
   final double rating;
   final VoidCallback onTap;
   final VoidCallback? onFavoriteToggle;
@@ -20,6 +22,8 @@ class GeartedItemCard extends StatelessWidget {
     required this.price,
     this.originalPrice,
     required this.condition,
+    this.category,
+    this.subcategory,
     this.rating = 0,
     required this.onTap,
     this.onFavoriteToggle,
@@ -118,11 +122,9 @@ class GeartedItemCard extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          isFavorite 
-                              ? Icons.favorite
-                              : Icons.favorite_border,
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
                           size: 16,
-                          color: isFavorite 
+                          color: isFavorite
                               ? GeartedTheme.accentOrange
                               : Colors.grey.shade600,
                         ),
@@ -148,6 +150,22 @@ class GeartedItemCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+
+                  // Subcategory
+                  if (subcategory != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subcategory!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+
                   const SizedBox(height: 4),
 
                   // Prix avec réduction éventuelle

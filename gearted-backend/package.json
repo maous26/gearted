@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
+    "dev:safe": "./start-server.sh",
+    "check": "./check-dev-env.sh",
+    "kill-port": "./kill-port.sh",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,6 +24,7 @@
     "@aws-sdk/client-s3": "^3.821.0",
     "@aws-sdk/lib-storage": "^3.821.0",
     "@aws-sdk/s3-request-presigner": "^3.821.0",
+    "@mongodb-js/zstd": "^2.0.1",
     "@types/nodemailer": "^6.4.17",
     "aws-sdk": "^2.1692.0",
     "bcrypt": "^5.1.1",

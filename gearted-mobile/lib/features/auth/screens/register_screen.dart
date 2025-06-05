@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../config/theme.dart';
-import '../../../widgets/common/gearted_button.dart';
 import '../../../widgets/common/gearted_text_field.dart';
 import '../../../services/auth_service.dart';
+
+// Army green color for tactical theme
+const Color _armyGreen = Color(0xFF4A5D23);
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -234,14 +235,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _registerWithInstagram() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await _authService.signInWithInstagram(context);
+
+      if (result != null && context.mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur d\'inscription Instagram: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1A1A1A), // Dark tactical background
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFF0D0D0D), // Dark tactical AppBar
         elevation: 0,
         iconTheme: IconThemeData(
-          color: GeartedTheme.primaryBlue,
+          color: _armyGreen,
         ),
       ),
       body: SafeArea(
@@ -257,6 +288,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white, // White text for dark theme
                   ),
                 ),
 
@@ -266,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Rejoignez la communauté Gearted et commencez à échanger votre équipement Airsoft.',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey.shade600,
+                    color: Colors.grey.shade400, // Lighter grey for dark theme
                   ),
                 ),
 
@@ -338,7 +370,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                         });
                       },
-                      activeColor: GeartedTheme.primaryBlue,
+                      activeColor: _armyGreen,
                     ),
                     Expanded(
                       child: Column(
@@ -350,23 +382,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               text: 'J\'accepte les ',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey.shade700,
+                                color: Colors
+                                    .grey.shade400, // Lighter for dark theme
                               ),
                               children: [
                                 TextSpan(
                                   text: 'Conditions d\'utilisation',
                                   style: TextStyle(
-                                    color: GeartedTheme.primaryBlue,
+                                    color: _armyGreen,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const TextSpan(
+                                TextSpan(
                                   text: ' et la ',
+                                  style: TextStyle(
+                                    color: Colors
+                                        .grey.shade400, // Consistent color
+                                  ),
                                 ),
                                 TextSpan(
                                   text: 'Politique de confidentialité',
                                   style: TextStyle(
-                                    color: GeartedTheme.primaryBlue,
+                                    color: _armyGreen,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -393,11 +430,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 32),
 
                 // Bouton d'inscription
-                GeartedButton(
-                  label: 'S\'inscrire',
-                  onPressed: _register,
-                  isLoading: _isLoading,
-                  fullWidth: true,
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _register,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _armyGreen,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: _armyGreen.withOpacity(0.6),
+                      disabledForegroundColor: Colors.white.withOpacity(0.6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'S\'inscrire',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Oswald',
+                              letterSpacing: 1,
+                            ),
+                          ),
+                  ),
                 ),
 
                 const SizedBox(height: 24),
@@ -442,6 +509,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: _registerWithFacebook,
                       icon: Icons.facebook,
                     ),
+                    const SizedBox(width: 16),
+                    _buildSocialButton(
+                      onPressed: _registerWithInstagram,
+                      icon: Icons.camera_alt,
+                    ),
                   ],
                 ),
 
@@ -451,7 +523,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Déjà un compte?'),
+                    const Text(
+                      'Déjà un compte?',
+                      style: TextStyle(
+                          color: Colors.white), // White text for dark theme
+                    ),
                     TextButton(
                       onPressed: () {
                         context.go('/login');
@@ -459,7 +535,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Text(
                         'Se connecter',
                         style: TextStyle(
-                          color: GeartedTheme.primaryBlue,
+                          color: _armyGreen,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -485,15 +561,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2A), // Dark container
           border: Border.all(
-            color: Colors.grey.shade300,
+            color: const Color(0xFF3A3A3A), // Darker border
           ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
           size: 30,
-          color: Colors.grey.shade700,
+          color: _armyGreen, // Army green icons
         ),
       ),
     );

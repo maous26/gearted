@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
+      duration: const Duration(milliseconds: 3500), // Increased duration
       vsync: this,
     );
 
@@ -36,11 +36,11 @@ class _SplashScreenState extends State<SplashScreen>
     ));
 
     _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
+      begin: 0.6, // Start smaller for more dramatic effect
+      end: 1.1, // Scale slightly larger than final size
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
     ));
 
     _glitchAnimation = Tween<double>(
@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.1, 0.7, curve: Curves.easeInOut),
+      curve: const Interval(0.1, 0.8, curve: Curves.easeInOut),
     ));
 
     _staticAnimation = Tween<double>(
@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.0, 0.5, curve: Curves.linear),
+      curve: const Interval(0.0, 0.6, curve: Curves.linear),
     ));
 
     _startAnimationAndNavigation();
@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen>
     _animationController.forward();
 
     // Wait for animation to complete, then check authentication
-    await Future.delayed(const Duration(milliseconds: 3000));
+    await Future.delayed(const Duration(milliseconds: 3500));
 
     if (mounted) {
       try {
@@ -108,11 +108,13 @@ class _SplashScreenState extends State<SplashScreen>
         child: AnimatedBuilder(
           animation: _animationController,
           builder: (context, child) {
-            // Create glitch effect by slightly offsetting the logo randomly
-            final glitchOffset = _glitchAnimation.value < 0.5
+            // Create enhanced glitch effect with more dramatic movement
+            final glitchOffset = _glitchAnimation.value < 0.6
                 ? Offset(
-                    ((_glitchAnimation.value * 10) % 1) * 4 - 2,
-                    ((_glitchAnimation.value * 15) % 1) * 2 - 1,
+                    ((_glitchAnimation.value * 25) % 1) * 12 -
+                        6, // Even more dramatic glitch range
+                    ((_glitchAnimation.value * 30) % 1) * 6 -
+                        3, // More vertical movement
                   )
                 : Offset.zero;
 
@@ -127,72 +129,96 @@ class _SplashScreenState extends State<SplashScreen>
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        // Static noise overlay (appears during transmission)
+                        // Enhanced static noise overlay with red glow effect only
                         if (_staticAnimation.value > 0 &&
-                            _staticAnimation.value < 0.8)
+                            _staticAnimation.value < 0.9)
                           Container(
-                            width: 220,
-                            height: 220,
+                            width: 380, // Even bigger size
+                            height: 380, // Even bigger size
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(30),
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  Colors.white.withOpacity(
-                                      0.1 * _staticAnimation.value),
+                                  const Color(0xFF8B0000).withOpacity(0.15 *
+                                      _staticAnimation.value), // Red tint only
                                   Colors.transparent,
-                                  Colors.white.withOpacity(
-                                      0.05 * _staticAnimation.value),
+                                  const Color(0xFF8B0000).withOpacity(0.1 *
+                                      _staticAnimation.value), // Red tint only
+                                  Colors.transparent,
                                 ],
-                                stops: [0.0, 0.5, 1.0],
+                                stops: [0.0, 0.3, 0.7, 1.0],
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF8B0000).withOpacity(
+                                      0.5 *
+                                          _staticAnimation
+                                              .value), // Stronger shadow
+                                  blurRadius: 30,
+                                  spreadRadius: 8,
+                                ),
+                              ],
                             ),
                           ),
 
-                        // Main logo with glitch effect
+                        // Main logo with enhanced glitch effect
                         Transform.translate(
                           offset: glitchOffset,
                           child: Container(
-                            width: 200,
-                            height: 200,
+                            width: 350, // Even bigger logo container
+                            height: 350, // Even bigger logo container
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(30),
                               border: Border.all(
-                                color: _glitchAnimation.value > 0.3 &&
-                                        _glitchAnimation.value < 0.7
-                                    ? const Color(0xFF8B0000).withOpacity(0.3)
+                                color: _glitchAnimation.value > 0.2 &&
+                                        _glitchAnimation.value < 0.8
+                                    ? const Color(0xFF8B0000)
+                                        .withOpacity(0.8) // More visible border
                                     : Colors.transparent,
-                                width: 2,
+                                width: 4, // Even thicker border
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF8B0000).withOpacity(
+                                      0.6 *
+                                          _glitchAnimation
+                                              .value), // Stronger glow
+                                  blurRadius: 40,
+                                  spreadRadius: 15,
+                                ),
+                              ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(26),
                               child: Stack(
                                 children: [
-                                  // Main logo
+                                  // Main logo - much bigger
                                   Padding(
-                                    padding: const EdgeInsets.all(24),
+                                    padding: const EdgeInsets.all(
+                                        35), // More padding
                                     child: Image.asset(
-                                      'assets/images/gearted_transparent.png',
+                                      'assets/images/GEARTED.png', // Using the new logo
                                       fit: BoxFit.contain,
-                                      width: 152,
-                                      height: 152,
-                                      color: _glitchAnimation.value > 0.6 &&
-                                              _glitchAnimation.value < 0.8
-                                          ? Colors.white.withOpacity(0.9)
+                                      width: 280, // Even bigger logo
+                                      height: 280, // Even bigger logo
+                                      color: _glitchAnimation.value > 0.5 &&
+                                              _glitchAnimation.value < 0.9
+                                          ? const Color(0xFF8B0000).withOpacity(
+                                              0.3) // Red tint instead of white
                                           : null,
                                       colorBlendMode:
-                                          _glitchAnimation.value > 0.6 &&
-                                                  _glitchAnimation.value < 0.8
-                                              ? BlendMode.overlay
+                                          _glitchAnimation.value > 0.5 &&
+                                                  _glitchAnimation.value < 0.9
+                                              ? BlendMode.multiply
                                               : null,
                                     ),
                                   ),
 
-                                  // Horizontal scan lines (TV interference effect)
-                                  if (_staticAnimation.value > 0.2 &&
-                                      _staticAnimation.value < 0.6)
+                                  // Enhanced horizontal scan lines (TV interference effect) with red tint
+                                  if (_staticAnimation.value > 0.1 &&
+                                      _staticAnimation.value < 0.8)
                                     Positioned.fill(
                                       child: Container(
                                         decoration: BoxDecoration(
@@ -200,11 +226,52 @@ class _SplashScreenState extends State<SplashScreen>
                                             begin: Alignment.topCenter,
                                             end: Alignment.bottomCenter,
                                             colors: List.generate(
-                                                20,
+                                                40, // Even more scan lines
                                                 (index) => index % 2 == 0
                                                     ? Colors.transparent
-                                                    : Colors.white
-                                                        .withOpacity(0.02)),
+                                                    : const Color(0xFF8B0000)
+                                                        .withOpacity(
+                                                            0.04)), // Red scan lines instead of white
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                  // Enhanced red glitch overlay
+                                  if (_glitchAnimation.value > 0.3 &&
+                                      _glitchAnimation.value < 0.7)
+                                    Positioned.fill(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              const Color(0xFF8B0000)
+                                                  .withOpacity(
+                                                      0.15), // Stronger
+                                              Colors.transparent,
+                                              const Color(0xFF8B0000)
+                                                  .withOpacity(0.1), // Stronger
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                  // Additional pulsing effect
+                                  if (_glitchAnimation.value > 0.1 &&
+                                      _glitchAnimation.value < 0.9)
+                                    Positioned.fill(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(26),
+                                          border: Border.all(
+                                            color: const Color(0xFF8B0000)
+                                                .withOpacity(0.3 *
+                                                    _glitchAnimation.value),
+                                            width: 2,
                                           ),
                                         ),
                                       ),
@@ -219,31 +286,37 @@ class _SplashScreenState extends State<SplashScreen>
 
                     const SizedBox(height: 60),
 
-                    // Loading indicator with signal strength effect
+                    // Enhanced loading indicator with signal strength effect
                     Transform.translate(
-                      offset: Offset(0, _glitchAnimation.value > 0.4 ? 2 : 0),
+                      offset: Offset(
+                          0,
+                          _glitchAnimation.value > 0.4
+                              ? 4
+                              : 0), // More movement
                       child: SizedBox(
-                        width: 40,
-                        height: 40,
+                        width: 60, // Even bigger loading indicator
+                        height: 60,
                         child: CircularProgressIndicator(
-                          strokeWidth: 4,
+                          strokeWidth: 6, // Even thicker stroke
                           valueColor: AlwaysStoppedAnimation<Color>(
                             _staticAnimation.value > 0.3 &&
                                     _staticAnimation.value < 0.7
-                                ? const Color(0xFF8B0000).withOpacity(0.6)
-                                : const Color(0xFF8B0000).withOpacity(0.8),
+                                ? const Color(0xFF8B0000)
+                                    .withOpacity(0.9) // More visible
+                                : const Color(0xFF8B0000)
+                                    .withOpacity(1.0), // Full opacity
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 35),
 
-                    // "Signal" text with glitch effect
+                    // Enhanced "Signal" text with more dramatic glitch effect
                     if (_fadeAnimation.value > 0.6)
                       Transform.translate(
                         offset: _glitchAnimation.value > 0.5
-                            ? Offset(1, 0)
+                            ? Offset(3, 0) // Even more dramatic movement
                             : Offset.zero,
                         child: Text(
                           _staticAnimation.value > 0.4 &&
@@ -251,10 +324,23 @@ class _SplashScreenState extends State<SplashScreen>
                               ? "ÉTABLISSEMENT DE LA CONNEXION..."
                               : "CONNEXION ÉTABLIE",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w300,
-                            letterSpacing: 2,
+                            color:
+                                Colors.white.withOpacity(0.95), // More visible
+                            fontSize: 16, // Bigger text
+                            fontWeight: FontWeight.w500, // Even bolder
+                            letterSpacing: 3.0, // More spacing
+                            shadows: [
+                              Shadow(
+                                color: const Color(0xFF8B0000).withOpacity(0.7),
+                                blurRadius: 15,
+                                offset: const Offset(0, 0),
+                              ),
+                              Shadow(
+                                color: const Color(0xFF8B0000).withOpacity(0.3),
+                                blurRadius: 25,
+                                offset: const Offset(0, 0),
+                              ),
+                            ],
                           ),
                         ),
                       ),

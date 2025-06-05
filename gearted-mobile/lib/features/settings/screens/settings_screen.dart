@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../services/location_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -30,6 +31,92 @@ class _SettingsScreenState extends State<SettingsScreen> {
     {'code': 'GBP', 'symbol': '£', 'name': 'Livre Sterling'},
     {'code': 'CHF', 'symbol': 'CHF', 'name': 'Franc Suisse'},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocationPermissions();
+  }
+
+  /// Initialize location permissions state
+  Future<void> _initializeLocationPermissions() async {
+    final hasPermission =
+        await LocationService.instance.hasLocationPermission();
+    if (mounted) {
+      setState(() {
+        _locationServices = hasPermission;
+      });
+    }
+  }
+
+  /// Handle location services toggle
+  Future<void> _handleLocationServicesToggle(bool value) async {
+    if (value) {
+      // User wants to enable location services
+      final granted =
+          await LocationService.instance.requestLocationPermission();
+      if (granted) {
+        setState(() {
+          _locationServices = true;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Services de localisation activés'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // Permission denied, show dialog to open settings
+        if (mounted) {
+          _showLocationPermissionDialog();
+        }
+      }
+    } else {
+      // User wants to disable location services
+      // We can't revoke permissions programmatically, but we can update the UI
+      setState(() {
+        _locationServices = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Pour désactiver complètement, allez dans les paramètres du système'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show dialog when location permission is denied
+  void _showLocationPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permission requise'),
+        content: const Text(
+          'L\'application a besoin d\'accéder à votre localisation pour partager votre position. '
+          'Veuillez autoriser l\'accès dans les paramètres de l\'application.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await LocationService.instance.openLocationSettings();
+            },
+            child: const Text('Paramètres'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showLanguageSelector() {
     showModalBottomSheet(
@@ -295,8 +382,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Services de localisation',
                   subtitle: 'Permettre l\'accès à votre position',
                   value: _locationServices,
-                  onChanged: (value) =>
-                      setState(() => _locationServices = value),
+                  onChanged: _handleLocationServicesToggle,
                   icon: Icons.location_on,
                 ),
                 _buildSwitchTile(

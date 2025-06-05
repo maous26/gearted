@@ -9,6 +9,8 @@ class ListingsService {
         'price': 380,
         'originalPrice': 450,
         'condition': 'TRÈS BON ÉTAT',
+        'category': 'Répliques Airsoft',
+        'subcategory': 'Fusils électriques (AEG)',
         'image': null,
       },
       {
@@ -17,6 +19,8 @@ class ListingsService {
         'price': 320,
         'originalPrice': 400,
         'condition': 'BON ÉTAT',
+        'category': 'Répliques Airsoft',
+        'subcategory': 'Fusils électriques (AEG)',
         'image': null,
       },
       {
@@ -25,6 +29,8 @@ class ListingsService {
         'price': 420,
         'originalPrice': 500,
         'condition': 'COMME NEUF',
+        'category': 'Répliques Airsoft',
+        'subcategory': 'Fusils électriques (AEG)',
         'image': null,
       },
     ];
@@ -39,6 +45,8 @@ class ListingsService {
         'title': 'Masque de Protection Tactique',
         'price': 85,
         'condition': 'NEUF',
+        'category': 'Équipement de protection',
+        'subcategory': 'Masques et protection visage',
         'image': null,
       },
       {
@@ -46,6 +54,8 @@ class ListingsService {
         'title': 'Gilet Tactique MOLLE',
         'price': 120,
         'condition': 'TRÈS BON ÉTAT',
+        'category': 'Équipement de protection',
+        'subcategory': 'Gilets tactiques',
         'image': null,
       },
       {
@@ -53,6 +63,8 @@ class ListingsService {
         'title': 'Lunette de Visée 4x32',
         'price': 95,
         'condition': 'BON ÉTAT',
+        'category': 'Accessoires de réplique',
+        'subcategory': 'Optiques et viseurs',
         'image': null,
       },
       {
@@ -60,6 +72,8 @@ class ListingsService {
         'title': 'Chargeur Hi-Cap 300 billes',
         'price': 25,
         'condition': 'COMME NEUF',
+        'category': 'Accessoires de réplique',
+        'subcategory': 'Chargeurs et munitions',
         'image': null,
       },
     ];
@@ -125,8 +139,8 @@ class ListingsService {
         'images': [],
         'seller': 'AirsoftPro',
         'location': 'Paris',
-        'category': 'replicas',
-        'subcategory': 'aeg',
+        'category': 'Répliques Airsoft',
+        'subcategory': 'Fusils électriques (AEG)',
         'exchangeable': true,
       },
       '2': {
@@ -140,8 +154,8 @@ class ListingsService {
         'images': [],
         'seller': 'TacticalGear',
         'location': 'Lyon',
-        'category': 'replicas',
-        'subcategory': 'aeg',
+        'category': 'Répliques Airsoft',
+        'subcategory': 'Fusils électriques (AEG)',
         'exchangeable': false,
       },
     };

@@ -10,7 +10,8 @@ export interface IUser extends Document {
   salesCount: number;
   googleId?: string;
   facebookId?: string;
-  provider: 'local' | 'google' | 'facebook';
+  instagramId?: string;
+  provider: 'local' | 'google' | 'facebook' | 'instagram';
   isEmailVerified: boolean;
   fcmToken?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -63,9 +64,14 @@ const userSchema = new Schema<IUser>(
       unique: true,
       sparse: true,
     },
+    instagramId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     provider: {
       type: String,
-      enum: ['local', 'google', 'facebook'],
+      enum: ['local', 'google', 'facebook', 'instagram'],
       default: 'local',
     },
     isEmailVerified: {

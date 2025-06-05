@@ -7,6 +7,7 @@ import {
   oauthFailure,
   mobileGoogleAuth,
   mobileFacebookAuth,
+  mobileInstagramAuth,
   updateFCMToken,
   removeFCMToken,
   testOAuthNotifications
@@ -47,6 +48,7 @@ router.get('/failure', oauthFailure);
 // Routes OAuth Mobile
 router.post('/google/mobile', mobileGoogleAuth);
 router.post('/facebook/mobile', mobileFacebookAuth);
+router.post('/instagram/mobile', mobileInstagramAuth);
 
 // Routes FCM Token Management
 router.put('/fcm-token', authMiddleware, updateFCMToken);

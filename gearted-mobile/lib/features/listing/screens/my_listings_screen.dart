@@ -18,7 +18,8 @@ class _MyListingsScreenState extends State<MyListingsScreen>
       'title': 'M4A1 Électrique G&G Combat Machine',
       'price': 180,
       'images': ['https://example.com/m4a1.jpg'],
-      'category': 'Répliques électriques',
+      'category': 'Répliques Airsoft',
+      'subcategory': 'Fusils électriques (AEG)',
       'views': 45,
       'favorites': 8,
       'status': 'active',
@@ -29,7 +30,8 @@ class _MyListingsScreenState extends State<MyListingsScreen>
       'title': 'Gilet tactique Viper avec plaques',
       'price': 120,
       'images': ['https://example.com/vest.jpg'],
-      'category': 'Équipements tactiques',
+      'category': 'Équipement de protection',
+      'subcategory': 'Gilets tactiques',
       'views': 32,
       'favorites': 5,
       'status': 'active',
@@ -44,7 +46,8 @@ class _MyListingsScreenState extends State<MyListingsScreen>
       'price': 65,
       'soldPrice': 60,
       'images': ['https://example.com/scope.jpg'],
-      'category': 'Optiques',
+      'category': 'Accessoires de réplique',
+      'subcategory': 'Optiques et viseurs',
       'status': 'sold',
       'soldAt': '2025-05-28T16:20:00Z',
     },
@@ -56,7 +59,8 @@ class _MyListingsScreenState extends State<MyListingsScreen>
       'title': 'AK-47 en cours de rédaction',
       'price': 0,
       'images': [],
-      'category': '',
+      'category': 'Répliques Airsoft',
+      'subcategory': 'Fusils électriques (AEG)',
       'status': 'draft',
       'updatedAt': '2025-05-30T12:00:00Z',
     },
@@ -197,9 +201,25 @@ class _MyListingsScreenState extends State<MyListingsScreen>
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+
+                      // Subcategory
+                      if (listing['subcategory'] != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          listing['subcategory'],
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+
                       const SizedBox(height: 4),
                       if (!isDraft) ...[
                         Text(

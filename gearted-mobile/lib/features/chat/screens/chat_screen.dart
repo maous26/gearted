@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../services/location_service.dart';
+
+const Color _armyGreen = Color(0xFF4A5D23);
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -98,6 +101,103 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
   }
 
+  Future<void> _shareLocation() async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Récupération de votre position...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final locationData =
+          await LocationService.instance.getCurrentLocationData();
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      if (locationData != null) {
+        // Create location message
+        final locationMessage = {
+          'id': DateTime.now().millisecondsSinceEpoch.toString(),
+          'type': 'location',
+          'latitude': locationData['latitude'],
+          'longitude': locationData['longitude'],
+          'address': locationData['address'],
+          'isMe': true,
+          'time': DateTime.now().toIso8601String(),
+          'status': 'sent',
+        };
+
+        setState(() {
+          _messages.add(locationMessage);
+        });
+
+        // Auto-scroll to bottom
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Position partagée avec succès'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          _showLocationError();
+        }
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      if (mounted) {
+        _showLocationError();
+      }
+    }
+  }
+
+  void _showLocationError() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Erreur de localisation'),
+        content: const Text(
+          'Impossible de récupérer votre position. Vérifiez que les services de localisation sont activés et que l\'autorisation est accordée.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              LocationService.instance.openLocationSettings();
+            },
+            child: const Text('Paramètres'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
 
@@ -141,6 +241,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Widget _buildMessage(Map<String, dynamic> message) {
     final isMe = message['isMe'] as bool;
+    final messageType = message['type'] ?? 'text';
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
@@ -167,20 +268,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isMe ? Theme.of(context).primaryColor : Colors.grey[200],
+                color: isMe ? _armyGreen : Colors.grey[200],
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    message['text'],
-                    style: TextStyle(
-                      color: isMe ? Colors.white : Colors.black87,
-                      fontSize: 16,
+                  if (messageType == 'location')
+                    _buildLocationContent(message, isMe)
+                  else
+                    Text(
+                      message['text'],
+                      style: TextStyle(
+                        color: isMe ? Colors.white : Colors.black87,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -203,7 +307,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                   : Icons.done,
                           size: 16,
                           color: message['status'] == 'read'
-                              ? Colors.blue[300]
+                              ? _armyGreen.withOpacity(0.8)
                               : Colors.white.withOpacity(0.7),
                         ),
                       ],
@@ -217,7 +321,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 16,
-              backgroundColor: Theme.of(context).primaryColor,
+              backgroundColor: _armyGreen,
               child: const Icon(
                 Icons.person,
                 size: 16,
@@ -228,6 +332,196 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  Widget _buildLocationContent(Map<String, dynamic> message, bool isMe) {
+    final latitude = message['latitude'];
+    final longitude = message['longitude'];
+    final address = message['address'] ?? 'Position partagée';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.location_on,
+              color: isMe ? Colors.white : _armyGreen,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Position partagée',
+                style: TextStyle(
+                  color: isMe ? Colors.white : Colors.black87,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isMe ? Colors.white.withOpacity(0.1) : Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                address,
+                style: TextStyle(
+                  color: isMe ? Colors.white.withOpacity(0.9) : Colors.black87,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Coordonnées: ${latitude?.toStringAsFixed(6)}, ${longitude?.toStringAsFixed(6)}',
+                style: TextStyle(
+                  color:
+                      isMe ? Colors.white.withOpacity(0.7) : Colors.grey[600],
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _openLocationInMaps(latitude, longitude),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isMe ? Colors.white : _armyGreen,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.map,
+                              size: 16,
+                              color: isMe ? _armyGreen : Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Ouvrir',
+                              style: TextStyle(
+                                color: isMe ? _armyGreen : Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _showDirections(latitude, longitude),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isMe
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isMe
+                                ? Colors.white.withOpacity(0.5)
+                                : Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.directions,
+                              size: 16,
+                              color: isMe ? Colors.white : Colors.black87,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Itinéraire',
+                              style: TextStyle(
+                                color: isMe ? Colors.white : Colors.black87,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openLocationInMaps(double? latitude, double? longitude) async {
+    if (latitude == null || longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Coordonnées invalides'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await LocationService.instance.openLocationInMaps(latitude, longitude);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir la carte'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showDirections(double? latitude, double? longitude) async {
+    if (latitude == null || longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Coordonnées invalides'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await LocationService.instance.openDirections(latitude, longitude);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir les directions'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -373,14 +667,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                               ListTile(
                                 leading: const Icon(Icons.location_on),
                                 title: const Text('Partager ma position'),
-                                onTap: () {
+                                onTap: () async {
                                   Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Localisation bientôt disponible'),
-                                    ),
-                                  );
+                                  await _shareLocation();
                                 },
                               ),
                             ],
@@ -413,7 +702,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
+                      color: _armyGreen,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(

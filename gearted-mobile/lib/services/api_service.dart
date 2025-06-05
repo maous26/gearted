@@ -31,7 +31,7 @@ class ApiService {
           final token = prefs.getString('auth_token');
 
           if (token != null) {
-            options.headers['Authorization'] = 'Bearer ';
+            options.headers['Authorization'] = 'Bearer $token';
           }
 
           return handler.next(options);
@@ -114,6 +114,92 @@ class ApiService {
       return response.data;
     } catch (e) {
       _handleError(e);
+      rethrow;
+    }
+  }
+
+  // Méthodes pour les listings
+  Future<Map<String, dynamic>> createListing({
+    required String title,
+    required String description,
+    required double price,
+    required List<String> imageUrls,
+    required String condition,
+    required String category,
+    required String subcategory,
+    List<String> tags = const [],
+    bool isExchangeable = false,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/listings',
+        data: {
+          'title': title,
+          'description': description,
+          'price': price,
+          'imageUrls': imageUrls,
+          'condition': condition,
+          'category': category,
+          'subcategory': subcategory,
+          'tags': tags,
+          'isExchangeable': isExchangeable,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      _handleError(error);
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getListings({
+    int page = 1,
+    int limit = 10,
+    String? search,
+    String? category,
+    String? subcategory,
+    String? condition,
+    double? minPrice,
+    double? maxPrice,
+    bool? isExchangeable,
+    String sortBy = 'createdAt',
+    String sortOrder = 'desc',
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+        'sortBy': sortBy,
+        'sortOrder': sortOrder,
+      };
+
+      if (search != null) queryParams['search'] = search;
+      if (category != null) queryParams['category'] = category;
+      if (subcategory != null) queryParams['subcategory'] = subcategory;
+      if (condition != null) queryParams['condition'] = condition;
+      if (minPrice != null) queryParams['minPrice'] = minPrice;
+      if (maxPrice != null) queryParams['maxPrice'] = maxPrice;
+      if (isExchangeable != null)
+        queryParams['isExchangeable'] = isExchangeable;
+
+      final response = await _dio.get(
+        '/listings',
+        queryParameters: queryParams,
+      );
+
+      return List<Map<String, dynamic>>.from(response.data['listings'] ?? []);
+    } catch (error) {
+      _handleError(error);
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getListingById(String id) async {
+    try {
+      final response = await _dio.get('/listings/$id');
+      return response.data['listing'];
+    } catch (error) {
+      _handleError(error);
       rethrow;
     }
   }

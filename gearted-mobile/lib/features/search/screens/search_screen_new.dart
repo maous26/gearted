@@ -1,5 +1,151 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/category_structure.dart';
+
+// Système intelligent de Hot Deals
+class HotDealsEngine {
+  // Prix moyens du marché par sous-catégorie
+  static const Map<String, double> marketPrices = {
+    'Fusils électriques (AEG)': 350,
+    'Pistolets (GBB/GBBR)': 150,
+    'Masques et protection visage': 80,
+    'Gearbox complètes': 100,
+    'Optiques et viseurs': 75,
+    'Gilets tactiques': 120,
+    'Casques et protection tête': 90,
+    'Chargeurs et magazines': 25,
+    'Uniformes et tenues': 60,
+    'Sacs et équipement de portage': 45,
+  };
+
+  // Historique vendeurs (simulé)
+  static const Map<String, Map<String, dynamic>> sellerHistory = {
+    'TACTICOOL_FR': {'totalSales': 150, 'rating': 4.8, 'promoCount': 5},
+    'AIRSOFT_PRO': {'totalSales': 200, 'rating': 4.9, 'promoCount': 3},
+    'GEAR_MASTER': {'totalSales': 120, 'rating': 4.7, 'promoCount': 8},
+    'PROTECTION_PLUS': {'totalSales': 80, 'rating': 4.6, 'promoCount': 12},
+    'OPTIC_PRO': {'totalSales': 95, 'rating': 4.5, 'promoCount': 15},
+    'SIDEARM_SPECIALIST': {'totalSales': 110, 'rating': 4.8, 'promoCount': 4},
+    'MECHANIC_PRO': {'totalSales': 85, 'rating': 4.7, 'promoCount': 6},
+  };
+
+  static bool isValidPromotion(double currentPrice, double? originalPrice) {
+    if (originalPrice == null) return true;
+
+    // Validation 1: Prix cohérents
+    if (originalPrice <= currentPrice) return false;
+
+    // Validation 2: Réductions raisonnables (max 70%)
+    double discountPercent =
+        ((originalPrice - currentPrice) / originalPrice) * 100;
+    return discountPercent <= 70;
+  }
+
+  static bool isHotDeal(Map<String, dynamic> item) {
+    double price = item['price']?.toDouble() ?? 0;
+    String? subcategory = item['subcategory'];
+    String seller = item['seller'] ?? '';
+    DateTime? dateAdded = item['dateAdded'];
+
+    // Critère 1: Prix inférieur à la moyenne du marché (-25%)
+    if (subcategory != null && marketPrices.containsKey(subcategory)) {
+      double marketPrice = marketPrices[subcategory]!;
+      if (price < (marketPrice * 0.75)) return true;
+    }
+
+    // Critère 2: Récemment ajouté (moins de 7 jours) ET prix attractif
+    bool isRecent =
+        dateAdded != null && DateTime.now().difference(dateAdded).inDays <= 7;
+    if (isRecent &&
+        subcategory != null &&
+        marketPrices.containsKey(subcategory)) {
+      double marketPrice = marketPrices[subcategory]!;
+      if (price < (marketPrice * 0.85))
+        return true; // -15% pour articles récents
+    }
+
+    // Critère 3: Vendeur populaire avec bon historique
+    if (sellerHistory.containsKey(seller)) {
+      var history = sellerHistory[seller]!;
+      bool isPopularSeller = history['totalSales'] >= 100 &&
+          history['rating'] >= 4.7 &&
+          history['promoCount'] <= 10; // Pas trop de promos suspectes
+
+      if (isPopularSeller &&
+          subcategory != null &&
+          marketPrices.containsKey(subcategory)) {
+        double marketPrice = marketPrices[subcategory]!;
+        if (price < (marketPrice * 0.90))
+          return true; // -10% pour vendeurs de confiance
+      }
+    }
+
+    // Critère 4: Promotion validée avec réduction significative
+    if (item['originalPrice'] != null) {
+      double originalPrice = item['originalPrice'].toDouble();
+      if (isValidPromotion(price, originalPrice)) {
+        double discountPercent =
+            ((originalPrice - price) / originalPrice) * 100;
+        return discountPercent >= 15; // Au moins 15% de réduction
+      }
+    }
+
+    return false;
+  }
+
+  static String getHotDealReason(Map<String, dynamic> item) {
+    double price = item['price']?.toDouble() ?? 0;
+    String? subcategory = item['subcategory'];
+    String seller = item['seller'] ?? '';
+
+    if (subcategory != null && marketPrices.containsKey(subcategory)) {
+      double marketPrice = marketPrices[subcategory]!;
+      double savingsPercent = ((marketPrice - price) / marketPrice) * 100;
+
+      if (savingsPercent >= 25) {
+        return 'Prix exceptionnel - ${savingsPercent.round()}% moins cher';
+      }
+
+      if (sellerHistory.containsKey(seller)) {
+        var history = sellerHistory[seller]!;
+        if (history['rating'] >= 4.7) {
+          return 'Vendeur de confiance - Bon prix';
+        }
+      }
+
+      if (item['originalPrice'] != null) {
+        double originalPrice = item['originalPrice'].toDouble();
+        double discountPercent =
+            ((originalPrice - price) / originalPrice) * 100;
+        return 'Promotion - ${discountPercent.round()}% de réduction';
+      }
+
+      return 'Bonne affaire détectée';
+    }
+
+    return 'Hot Deal';
+  }
+
+  static int getDiscountPercentage(Map<String, dynamic> item) {
+    if (item['originalPrice'] != null) {
+      double price = item['price']?.toDouble() ?? 0;
+      double originalPrice = item['originalPrice'].toDouble();
+      return (((originalPrice - price) / originalPrice) * 100).round();
+    }
+
+    // Calcul basé sur le prix du marché
+    String? subcategory = item['subcategory'];
+    if (subcategory != null && marketPrices.containsKey(subcategory)) {
+      double price = item['price']?.toDouble() ?? 0;
+      double marketPrice = marketPrices[subcategory]!;
+      if (price < marketPrice) {
+        return (((marketPrice - price) / marketPrice) * 100).round();
+      }
+    }
+
+    return 0;
+  }
+}
 
 class SearchScreen extends StatefulWidget {
   final String? category;
@@ -16,10 +162,10 @@ class _SearchScreenState extends State<SearchScreen> {
   String _selectedSort = 'recent';
 
   // Filtres actifs
-  final Set<String> _activeCategories = {};
   RangeValues _priceRange = const RangeValues(0, 1000);
   String? _selectedCondition;
-  bool _exchangeOnly = false;
+  String? _selectedCategory;
+  String? _selectedSubCategory;
 
   // Résultats de recherche simulés
   List<Map<String, dynamic>> _searchResults = [];
@@ -40,34 +186,6 @@ class _SearchScreenState extends State<SearchScreen> {
     'price_desc': 'PRIX DÉCROISSANT',
     'distance': 'DISTANCE',
   };
-
-  // Catégories de filtrage rapide
-  final List<Map<String, dynamic>> _quickFilters = [
-    {
-      'id': 'replicas',
-      'name': 'RÉPLIQUES',
-      'icon': Icons.gps_fixed, // Cohérent avec home screen - visée tactique
-      'color': const Color(0xFF8B0000),
-    },
-    {
-      'id': 'protection',
-      'name': 'PROTECTION',
-      'icon': Icons.shield, // Parfait pour protection ✅
-      'color': const Color(0xFF2F4F2F),
-    },
-    {
-      'id': 'optics',
-      'name': 'OPTIQUES',
-      'icon': Icons.center_focus_strong, // Plus précis que zoom_in 🎯
-      'color': const Color(0xFF4A4A4A),
-    },
-    {
-      'id': 'tactical',
-      'name': 'TACTIQUE',
-      'icon': Icons.backpack, // Parfait pour équipement tactique ✅
-      'color': const Color(0xFF5C5C5C),
-    },
-  ];
 
   @override
   void initState() {
@@ -97,10 +215,12 @@ class _SearchScreenState extends State<SearchScreen> {
     String query = _searchController.text.toLowerCase();
     print('SearchScreen: Generating results for query: "$query"');
 
-    // Résultats spécifiques pour les offres tactiques/deals
-    if (query.contains('deals') || query.contains('offres')) {
+    // Résultats spécifiques pour les Hot Deals
+    if (query.contains('deals') ||
+        query.contains('offres') ||
+        query.contains('hot')) {
       print(
-          'SearchScreen: Detected deals/offres query - returning special deals results');
+          'SearchScreen: Detected hot deals query - returning special deals results');
       return [
         {
           'id': '1',
@@ -110,324 +230,68 @@ class _SearchScreenState extends State<SearchScreen> {
           'condition': 'TRÈS BON ÉTAT',
           'seller': 'TACTICOOL_FR',
           'distance': '5 km',
-          'category': 'replicas',
+          'category': 'Répliques Airsoft',
+          'subcategory': 'Fusils électriques (AEG)',
           'exchangeable': true,
+          'dateAdded': DateTime.now().subtract(const Duration(days: 2)),
         },
         {
           'id': '2',
           'title': 'GILET JPC 2.0 TACTICAL',
-          'price': 120,
-          'originalPrice': 180,
-          'condition': 'COMME NEUF',
-          'seller': 'TACTICAL_STORE',
-          'distance': '3 km',
-          'category': 'tactical',
-          'exchangeable': false,
-        },
-        {
-          'id': '3',
-          'title': 'EOTECH 553 REPLICA',
-          'price': 65,
-          'originalPrice': 95,
-          'condition': 'BON ÉTAT',
-          'seller': 'OPTIC_PRO',
-          'distance': '8 km',
-          'category': 'optics',
-          'exchangeable': true,
-        },
-        {
-          'id': '4',
-          'title': 'AK-74M TACTICAL EDITION',
-          'price': 250,
-          'originalPrice': 320,
-          'condition': 'BON ÉTAT',
-          'seller': 'AIRSOFT_PRO',
-          'distance': '8 km',
-          'category': 'replicas',
-          'exchangeable': false,
-        },
-        {
-          'id': '5',
-          'title': 'CASQUE FAST MARITIME',
           'price': 85,
           'originalPrice': 120,
-          'condition': 'NEUF',
+          'condition': 'COMME NEUF',
           'seller': 'GEAR_MASTER',
-          'distance': '12 km',
-          'category': 'protection',
+          'distance': '3 km',
+          'category': 'Équipement de protection',
+          'subcategory': 'Gilets tactiques',
           'exchangeable': false,
-        },
-      ];
-    }
-
-    // Résultats spécifiques par catégorie
-    if (query.contains('replicas') || query.contains('répliques')) {
-      return [
-        {
-          'id': '1',
-          'title': 'M4A1 SOPMOD BLOCK II',
-          'price': 380,
-          'originalPrice': 450,
-          'condition': 'TRÈS BON ÉTAT',
-          'seller': 'TACTICOOL_FR',
-          'distance': '5 km',
-          'category': 'replicas',
-          'exchangeable': true,
-        },
-        {
-          'id': '2',
-          'title': 'AK-74M TACTICAL EDITION',
-          'price': 320,
-          'originalPrice': 400,
-          'condition': 'BON ÉTAT',
-          'seller': 'AIRSOFT_PRO',
-          'distance': '8 km',
-          'category': 'replicas',
-          'exchangeable': false,
+          'dateAdded': DateTime.now().subtract(const Duration(days: 1)),
         },
         {
           'id': '3',
-          'title': 'GLOCK 17 GBB RÉALISTE',
-          'price': 180,
-          'condition': 'COMME NEUF',
-          'seller': 'SIDEARM_SPECIALIST',
-          'distance': '3 km',
-          'category': 'replicas',
-          'exchangeable': true,
-        },
-      ];
-    }
-
-    if (query.contains('aeg')) {
-      return [
-        {
-          'id': '1',
-          'title': 'M4A1 SOPMOD BLOCK II',
-          'price': 380,
-          'originalPrice': 450,
-          'condition': 'TRÈS BON ÉTAT',
-          'seller': 'TACTICOOL_FR',
-          'distance': '5 km',
-          'category': 'replicas',
-          'exchangeable': true,
-        },
-        {
-          'id': '4',
-          'title': 'HK416 ELITE SERIES',
-          'price': 420,
-          'condition': 'NEUF',
-          'seller': 'PREMIUM_GEAR',
-          'distance': '12 km',
-          'category': 'replicas',
-          'exchangeable': false,
-        },
-      ];
-    }
-
-    if (query.contains('masks') || query.contains('masques')) {
-      return [
-        {
-          'id': '5',
-          'title': 'MASQUE PRO-TEC ACH',
-          'price': 95,
-          'condition': 'TRÈS BON ÉTAT',
-          'seller': 'PROTECTION_PLUS',
-          'distance': '6 km',
-          'category': 'protection',
-          'exchangeable': false,
-        },
-        {
-          'id': '6',
-          'title': 'CASQUE FAST MARITIME',
-          'price': 120,
-          'condition': 'NEUF',
-          'seller': 'GEAR_MASTER',
-          'distance': '12 km',
-          'category': 'protection',
-          'exchangeable': false,
-        },
-      ];
-    }
-
-    if (query.contains('scopes') || query.contains('optiques')) {
-      return [
-        {
-          'id': '7',
           'title': 'EOTECH 553 REPLICA',
-          'price': 85,
-          'originalPrice': 110,
+          'price': 55,
+          'originalPrice': 75,
           'condition': 'BON ÉTAT',
           'seller': 'OPTIC_PRO',
           'distance': '8 km',
-          'category': 'optics',
+          'category': 'Accessoires de réplique',
+          'subcategory': 'Optiques et viseurs',
           'exchangeable': true,
+          'dateAdded': DateTime.now().subtract(const Duration(days: 3)),
         },
         {
-          'id': '8',
-          'title': 'RED DOT AIMPOINT T1',
+          'id': '4',
+          'title': 'CASQUE FAST MARITIME',
           'price': 65,
-          'condition': 'COMME NEUF',
-          'seller': 'SIGHT_SOLUTIONS',
-          'distance': '4 km',
-          'category': 'optics',
-          'exchangeable': false,
-        },
-      ];
-    }
-
-    if (query.contains('vests') || query.contains('gilets')) {
-      return [
-        {
-          'id': '9',
-          'title': 'GILET JPC 2.0',
-          'price': 150,
-          'condition': 'COMME NEUF',
-          'seller': 'TACTICAL_STORE',
-          'distance': '3 km',
-          'category': 'tactical',
-          'exchangeable': false,
-        },
-        {
-          'id': '10',
-          'title': 'CHEST RIG MODULAIRE',
-          'price': 85,
-          'condition': 'BON ÉTAT',
-          'seller': 'GEAR_FACTORY',
-          'distance': '7 km',
-          'category': 'tactical',
-          'exchangeable': true,
-        },
-      ];
-    }
-
-    if (query.contains('parts') || query.contains('pièces')) {
-      return [
-        {
-          'id': '11',
-          'title': 'GEARBOX V2 COMPLÈTE SHS',
-          'price': 120,
+          'originalPrice': 90,
           'condition': 'NEUF',
-          'seller': 'MECHANIC_PRO',
-          'distance': '5 km',
-          'category': 'parts',
+          'seller': 'PROTECTION_PLUS',
+          'distance': '12 km',
+          'category': 'Équipement de protection',
+          'subcategory': 'Casques et protection tête',
           'exchangeable': false,
+          'dateAdded': DateTime.now().subtract(const Duration(days: 5)),
         },
-        {
-          'id': '12',
-          'title': 'MOTEUR HIGH TORQUE',
-          'price': 45,
-          'condition': 'TRÈS BON ÉTAT',
-          'seller': 'UPGRADE_SPECIALIST',
-          'distance': '10 km',
-          'category': 'parts',
-          'exchangeable': true,
-        },
-      ];
-    }
-
-    if (query.contains('gbb')) {
-      return [
-        {
-          'id': '13',
-          'title': 'GLOCK 17 GBB RÉALISTE',
-          'price': 180,
-          'condition': 'COMME NEUF',
-          'seller': 'SIDEARM_SPECIALIST',
-          'distance': '3 km',
-          'category': 'replicas',
-          'exchangeable': true,
-        },
-        {
-          'id': '14',
-          'title': 'P226 NAVY SEAL',
-          'price': 165,
-          'condition': 'BON ÉTAT',
-          'seller': 'PISTOL_PRO',
-          'distance': '6 km',
-          'category': 'replicas',
-          'exchangeable': false,
-        },
-      ];
-    }
-
-    // Gestion des catégories principales
-    if (query.contains('protection')) {
-      return [
         {
           'id': '5',
-          'title': 'MASQUE PRO-TEC ACH',
-          'price': 95,
+          'title': 'GEARBOX V2 COMPLÈTE',
+          'price': 70,
+          'originalPrice': 100,
           'condition': 'TRÈS BON ÉTAT',
-          'seller': 'PROTECTION_PLUS',
+          'seller': 'MECHANIC_PRO',
           'distance': '6 km',
-          'category': 'protection',
-          'exchangeable': false,
-        },
-        {
-          'id': '6',
-          'title': 'CASQUE FAST MARITIME',
-          'price': 120,
-          'condition': 'NEUF',
-          'seller': 'GEAR_MASTER',
-          'distance': '12 km',
-          'category': 'protection',
-          'exchangeable': false,
-        },
-      ];
-    }
-
-    if (query.contains('equipment') || query.contains('équipement')) {
-      return [
-        {
-          'id': '15',
-          'title': 'SAC À DOS TACTICAL',
-          'price': 75,
-          'condition': 'BON ÉTAT',
-          'seller': 'OUTDOOR_GEAR',
-          'distance': '4 km',
-          'category': 'equipment',
+          'category': 'Pièces internes et upgrade',
+          'subcategory': 'Gearbox complètes',
           'exchangeable': true,
-        },
-        {
-          'id': '16',
-          'title': 'HOLSTER KYDEX',
-          'price': 35,
-          'condition': 'NEUF',
-          'seller': 'HOLSTER_FACTORY',
-          'distance': '8 km',
-          'category': 'equipment',
-          'exchangeable': false,
+          'dateAdded': DateTime.now().subtract(const Duration(days: 4)),
         },
       ];
     }
 
-    if (query.contains('accessories') || query.contains('accessoires')) {
-      return [
-        {
-          'id': '17',
-          'title': 'POIGNÉE VERTICALE',
-          'price': 25,
-          'condition': 'COMME NEUF',
-          'seller': 'ACCESSORY_SHOP',
-          'distance': '2 km',
-          'category': 'accessories',
-          'exchangeable': false,
-        },
-        {
-          'id': '18',
-          'title': 'SILENCIEUX FOAM',
-          'price': 40,
-          'condition': 'BON ÉTAT',
-          'seller': 'STEALTH_GEAR',
-          'distance': '9 km',
-          'category': 'accessories',
-          'exchangeable': true,
-        },
-      ];
-    }
-
-    // Résultats par défaut (tous les types)
-    return [
+    // Résultats par défaut avec application du système Hot Deals
+    List<Map<String, dynamic>> results = [
       {
         'id': '1',
         'title': 'M4A1 SOPMOD BLOCK II',
@@ -436,39 +300,47 @@ class _SearchScreenState extends State<SearchScreen> {
         'condition': 'TRÈS BON ÉTAT',
         'seller': 'TACTICOOL_FR',
         'distance': '5 km',
-        'category': 'replicas',
+        'category': 'Répliques Airsoft',
+        'subcategory': 'Fusils électriques (AEG)',
         'exchangeable': true,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 10)),
       },
       {
         'id': '2',
         'title': 'CASQUE FAST MARITIME',
-        'price': 120,
+        'price': 60,
         'condition': 'NEUF',
         'seller': 'GEAR_MASTER',
         'distance': '12 km',
-        'category': 'protection',
+        'category': 'Équipement de protection',
+        'subcategory': 'Casques et protection tête',
         'exchangeable': false,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 2)),
       },
       {
         'id': '3',
         'title': 'EOTECH 553 REPLICA',
-        'price': 85,
-        'originalPrice': 110,
+        'price': 50,
+        'originalPrice': 75,
         'condition': 'BON ÉTAT',
-        'seller': 'OPTIC_PRO',
+        'seller': 'AIRSOFT_PRO',
         'distance': '8 km',
-        'category': 'optics',
+        'category': 'Accessoires de réplique',
+        'subcategory': 'Optiques et viseurs',
         'exchangeable': true,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 15)),
       },
       {
         'id': '4',
         'title': 'GILET JPC 2.0',
-        'price': 150,
+        'price': 80,
         'condition': 'COMME NEUF',
-        'seller': 'TACTICAL_STORE',
+        'seller': 'SIDEARM_SPECIALIST',
         'distance': '3 km',
-        'category': 'tactical',
+        'category': 'Équipement de protection',
+        'subcategory': 'Gilets tactiques',
         'exchangeable': false,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 5)),
       },
       {
         'id': '5',
@@ -478,60 +350,86 @@ class _SearchScreenState extends State<SearchScreen> {
         'condition': 'BON ÉTAT',
         'seller': 'AIRSOFT_PRO',
         'distance': '8 km',
-        'category': 'replicas',
+        'category': 'Répliques Airsoft',
+        'subcategory': 'Fusils électriques (AEG)',
         'exchangeable': false,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 12)),
       },
       {
         'id': '6',
         'title': 'GEARBOX V2 COMPLÈTE SHS',
-        'price': 120,
+        'price': 70,
         'condition': 'NEUF',
         'seller': 'MECHANIC_PRO',
         'distance': '5 km',
-        'category': 'parts',
+        'category': 'Pièces internes et upgrade',
+        'subcategory': 'Gearbox complètes',
         'exchangeable': false,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 3)),
       },
       {
         'id': '7',
         'title': 'MASQUE PRO-TEC ACH',
-        'price': 95,
+        'price': 55,
         'condition': 'TRÈS BON ÉTAT',
         'seller': 'PROTECTION_PLUS',
         'distance': '6 km',
-        'category': 'protection',
+        'category': 'Équipement de protection',
+        'subcategory': 'Masques et protection visage',
         'exchangeable': false,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 8)),
       },
       {
         'id': '8',
         'title': 'GLOCK 17 GBB RÉALISTE',
-        'price': 180,
+        'price': 110,
         'condition': 'COMME NEUF',
         'seller': 'SIDEARM_SPECIALIST',
         'distance': '3 km',
-        'category': 'replicas',
+        'category': 'Répliques Airsoft',
+        'subcategory': 'Pistolets (GBB/GBBR)',
         'exchangeable': true,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 6)),
       },
       {
         'id': '9',
         'title': 'SAC À DOS TACTICAL',
-        'price': 75,
+        'price': 30,
         'condition': 'BON ÉTAT',
-        'seller': 'OUTDOOR_GEAR',
+        'seller': 'GEAR_MASTER',
         'distance': '4 km',
-        'category': 'equipment',
+        'category': 'Tenues et camouflages',
+        'subcategory': 'Sacs et équipement de portage',
         'exchangeable': true,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 4)),
       },
       {
         'id': '10',
         'title': 'RED DOT AIMPOINT T1',
-        'price': 65,
+        'price': 55,
         'condition': 'COMME NEUF',
-        'seller': 'SIGHT_SOLUTIONS',
+        'seller': 'AIRSOFT_PRO',
         'distance': '4 km',
-        'category': 'optics',
+        'category': 'Accessoires de réplique',
+        'subcategory': 'Optiques et viseurs',
         'exchangeable': false,
+        'dateAdded': DateTime.now().subtract(const Duration(days: 7)),
       },
     ];
+
+    // Filtrer par catégorie si spécifiée
+    if (query.isNotEmpty &&
+        !query.contains('deals') &&
+        !query.contains('offres') &&
+        !query.contains('hot')) {
+      results = results.where((item) {
+        return item['title'].toLowerCase().contains(query) ||
+            item['category'].toLowerCase().contains(query) ||
+            (item['subcategory']?.toLowerCase().contains(query) ?? false);
+      }).toList();
+    }
+
+    return results;
   }
 
   @override
@@ -552,7 +450,14 @@ class _SearchScreenState extends State<SearchScreen> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          // Check if we can pop, otherwise go to home
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          } else {
+                            context.go('/home');
+                          }
+                        },
                       ),
                       Expanded(
                         child: Container(
@@ -606,67 +511,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
 
                   const SizedBox(height: 12),
-
-                  // Filtres rapides
-                  SizedBox(
-                    height: 36,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _quickFilters.length,
-                      itemBuilder: (context, index) {
-                        final filter = _quickFilters[index];
-                        final isActive =
-                            _activeCategories.contains(filter['id']);
-
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  filter['icon'],
-                                  size: 16,
-                                  color:
-                                      isActive ? Colors.white : filter['color'],
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  filter['name'],
-                                  style: TextStyle(
-                                    fontFamily: 'Oswald',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: isActive
-                                        ? Colors.white
-                                        : filter['color'],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            selected: isActive,
-                            onSelected: (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _activeCategories.add(filter['id']);
-                                } else {
-                                  _activeCategories.remove(filter['id']);
-                                }
-                              });
-                              _performSearch();
-                            },
-                            backgroundColor: const Color(0xFF2A2A2A),
-                            selectedColor: filter['color'],
-                            side: BorderSide(
-                              color: isActive
-                                  ? filter['color']
-                                  : const Color(0xFF3A3A3A),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -681,9 +525,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   OutlinedButton.icon(
                     onPressed: _showAdvancedFilters,
                     icon: const Icon(Icons.tune, size: 16),
-                    label: Text(
+                    label: const Text(
                       'FILTRES',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Oswald',
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -802,194 +646,280 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildResultItem(Map<String, dynamic> item) {
+    final isHotDeal = HotDealsEngine.isHotDeal(item);
+    final hotDealReason =
+        isHotDeal ? HotDealsEngine.getHotDealReason(item) : '';
+    final discountPercentage = HotDealsEngine.getDiscountPercentage(item);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF3A3A3A)),
+        border: Border.all(
+          color: isHotDeal ? const Color(0xFF8B0000) : const Color(0xFF3A3A3A),
+          width: isHotDeal ? 2 : 1,
+        ),
       ),
       child: InkWell(
         onTap: () => context.push('/listing/${item['id']}'),
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Row(
+          child: Column(
             children: [
-              // Image placeholder
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.image, color: Colors.grey, size: 40),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Infos produit
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Titre
-                    Text(
-                      item['title'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Oswald',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Prix
-                    Row(
-                      children: [
-                        Text(
-                          '${item['price']}€',
+              // Hot Deal Badge
+              if (isHotDeal) ...[
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B0000),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.local_fire_department,
+                          color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'HOT DEAL - $hotDealReason',
                           style: const TextStyle(
-                            color: Color(0xFF4CAF50),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                             fontFamily: 'Oswald',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (item['originalPrice'] != null) ...[
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              '${item['originalPrice']}€',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              Row(
+                children: [
+                  // Image placeholder
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child:
+                        const Icon(Icons.image, color: Colors.grey, size: 40),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Infos produit
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Titre
+                        Text(
+                          item['title'],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Oswald',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
                           ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF8B0000),
-                              borderRadius: BorderRadius.circular(4),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        // Subcategory
+                        if (item['subcategory'] != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            item['subcategory'],
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 11,
+                              fontFamily: 'Oswald',
+                              letterSpacing: 0.3,
                             ),
-                            child: Text(
-                              '-${(((item['originalPrice'] - item['price']) / item['originalPrice']) * 100).round()}%',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                      ],
-                    ),
 
-                    const SizedBox(height: 8),
+                        const SizedBox(height: 8),
 
-                    // Infos vendeur et condition
-                    Row(
-                      children: [
-                        Icon(Icons.person, color: Colors.grey[600], size: 14),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            item['seller'],
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 12,
-                              fontFamily: 'Oswald',
+                        // Prix
+                        Row(
+                          children: [
+                            Text(
+                              '${item['price']}€',
+                              style: TextStyle(
+                                color: isHotDeal
+                                    ? const Color(0xFF8B0000)
+                                    : const Color(0xFF4CAF50),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Oswald',
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(Icons.location_on,
-                            color: Colors.grey[600], size: 14),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            item['distance'],
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 12,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    // Tags
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3A3A3A),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            item['condition'],
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 10,
-                              fontFamily: 'Oswald',
-                            ),
-                          ),
-                        ),
-                        if (item['exchangeable']) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2F4F2F),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.swap_horiz,
-                                    color: Colors.white, size: 12),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'ÉCHANGE',
+                            if (item['originalPrice'] != null) ...[
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  '${item['originalPrice']}€',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF8B0000),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '-${(((item['originalPrice'] - item['price']) / item['originalPrice']) * 100).round()}%',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 10,
-                                    fontFamily: 'Oswald',
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ],
+                              ),
+                            ] else if (discountPercentage > 0) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4CAF50),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '-$discountPercentage%',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Infos vendeur et condition
+                        Row(
+                          children: [
+                            Icon(Icons.person,
+                                color: Colors.grey[600], size: 14),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                item['seller'],
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                  fontFamily: 'Oswald',
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Icon(Icons.location_on,
+                                color: Colors.grey[600], size: 14),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                item['distance'],
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        // Tags
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3A3A3A),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                item['condition'],
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontFamily: 'Oswald',
+                                ),
+                              ),
+                            ),
+                            if (item['exchangeable']) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2F4F2F),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.swap_horiz,
+                                        color: Colors.white, size: 12),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'ÉCHANGE',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontFamily: 'Oswald',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Bouton favori
-              IconButton(
-                icon: const Icon(Icons.favorite_border, color: Colors.grey),
-                onPressed: () {
-                  // Toggle favorite
-                },
+                  // Bouton favori
+                  IconButton(
+                    icon: const Icon(Icons.favorite_border, color: Colors.grey),
+                    onPressed: () {
+                      // Toggle favorite
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -1018,9 +948,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   // Header
                   Row(
                     children: [
-                      Text(
+                      const Text(
                         'FILTRES AVANCÉS',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontFamily: 'Oswald',
                           fontSize: 18,
@@ -1091,6 +1021,157 @@ class _SearchScreenState extends State<SearchScreen> {
 
                           const SizedBox(height: 32),
 
+                          // Catégorie
+                          Text(
+                            'CATÉGORIE',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontFamily: 'Oswald',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2A2A2A),
+                              borderRadius: BorderRadius.circular(6),
+                              border:
+                                  Border.all(color: const Color(0xFF3A3A3A)),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedCategory,
+                                isExpanded: true,
+                                hint: Text(
+                                  'Sélectionner une catégorie',
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontFamily: 'Oswald',
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                dropdownColor: const Color(0xFF2A2A2A),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'Oswald',
+                                  fontSize: 14,
+                                ),
+                                icon: const Icon(Icons.arrow_drop_down,
+                                    color: Colors.grey),
+                                items: CategoryStructure.mainCategories
+                                    .map((category) {
+                                  return DropdownMenuItem<String>(
+                                    value: category,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          CategoryStructure.getCategoryIcon(
+                                                  category) ??
+                                              Icons.category,
+                                          size: 16,
+                                          color: const Color(0xFF8B0000),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            category,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontFamily: 'Oswald',
+                                              fontSize: 14,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    _selectedCategory = value;
+                                    _selectedSubCategory = null;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+
+                          // Sous-catégorie (conditionnel)
+                          if (_selectedCategory != null) ...[
+                            const SizedBox(height: 20),
+                            Text(
+                              'SOUS-CATÉGORIE',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontFamily: 'Oswald',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2A2A2A),
+                                borderRadius: BorderRadius.circular(6),
+                                border:
+                                    Border.all(color: const Color(0xFF3A3A3A)),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _selectedSubCategory,
+                                  isExpanded: true,
+                                  hint: Text(
+                                    'Sélectionner une sous-catégorie',
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontFamily: 'Oswald',
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  dropdownColor: const Color(0xFF2A2A2A),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontFamily: 'Oswald',
+                                    fontSize: 14,
+                                  ),
+                                  icon: const Icon(Icons.arrow_drop_down,
+                                      color: Colors.grey),
+                                  items: CategoryStructure.getSubCategories(
+                                          _selectedCategory!)
+                                      .map((subCategory) {
+                                    return DropdownMenuItem<String>(
+                                      value: subCategory,
+                                      child: Text(
+                                        subCategory,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'Oswald',
+                                          fontSize: 14,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setModalState(() {
+                                      _selectedSubCategory = value;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 32),
+
                           // État
                           Text(
                             'ÉTAT',
@@ -1121,52 +1202,23 @@ class _SearchScreenState extends State<SearchScreen> {
                                   ),
                                 ),
                                 selected: isSelected,
+                                selectedColor: const Color(0xFF8B0000),
+                                backgroundColor: const Color(0xFF2A2A2A),
                                 onSelected: (selected) {
                                   setModalState(() {
                                     _selectedCondition =
                                         selected ? condition : null;
                                   });
                                 },
-                                backgroundColor: const Color(0xFF2A2A2A),
-                                selectedColor: const Color(0xFF2F4F2F),
-                                side: BorderSide(
-                                  color: isSelected
-                                      ? const Color(0xFF2F4F2F)
-                                      : const Color(0xFF3A3A3A),
-                                ),
                               );
                             }).toList(),
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          // Échange possible
-                          SwitchListTile(
-                            title: Text(
-                              'ÉCHANGE POSSIBLE UNIQUEMENT',
-                              style: TextStyle(
-                                color: Colors.grey[300],
-                                fontFamily: 'Oswald',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            value: _exchangeOnly,
-                            onChanged: (value) {
-                              setModalState(() {
-                                _exchangeOnly = value;
-                              });
-                            },
-                            activeColor: const Color(0xFF8B0000),
-                            inactiveTrackColor: const Color(0xFF3A3A3A),
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Boutons d'action
                   Row(
@@ -1174,25 +1226,25 @@ class _SearchScreenState extends State<SearchScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            setState(() {
+                            setModalState(() {
                               _priceRange = const RangeValues(0, 1000);
                               _selectedCondition = null;
-                              _exchangeOnly = false;
+                              _selectedCategory = null;
+                              _selectedSubCategory = null;
                             });
-                            Navigator.pop(context);
                           },
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.grey[400],
-                            side: BorderSide(color: Colors.grey[600]!),
+                            side: const BorderSide(color: Color(0xFF8B0000)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          child: Text(
+                          child: const Text(
                             'RÉINITIALISER',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1,
+                              color: Color(0xFF8B0000),
                             ),
                           ),
                         ),
@@ -1208,13 +1260,14 @@ class _SearchScreenState extends State<SearchScreen> {
                             backgroundColor: const Color(0xFF8B0000),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          child: Text(
+                          child: const Text(
                             'APPLIQUER',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Oswald',
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1,
+                              color: Colors.white,
                             ),
                           ),
                         ),

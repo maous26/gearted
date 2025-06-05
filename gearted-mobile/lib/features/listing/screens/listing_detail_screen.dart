@@ -133,6 +133,10 @@ class ListingDetailScreen extends StatelessWidget {
                   // Item details
                   _buildDetailSection('Détails', [
                     {'label': 'Catégorie', 'value': mockData['category']},
+                    {
+                      'label': 'Sous-catégorie',
+                      'value': mockData['subcategory']
+                    },
                     {'label': 'Marque', 'value': mockData['brand']},
                     {'label': 'Publié le', 'value': mockData['publishedDate']},
                     {'label': 'Localisation', 'value': mockData['location']},
@@ -379,7 +383,8 @@ class ListingDetailScreen extends StatelessWidget {
         'title': 'Gearbox V2 complète SHS',
         'price': 95,
         'condition': 'Très bon état',
-        'category': 'Gearbox & Moteurs',
+        'category': 'Pièces internes et upgrade',
+        'subcategory': 'Gearbox complètes',
         'brand': 'SHS',
         'publishedDate': '15 mai 2025',
         'location': 'Paris, 75011',
@@ -399,7 +404,8 @@ class ListingDetailScreen extends StatelessWidget {
         'title': 'RDS Eotech replica',
         'price': 65,
         'condition': 'Bon état',
-        'category': 'Optiques & Viseurs',
+        'category': 'Accessoires de réplique',
+        'subcategory': 'Optiques et viseurs',
         'brand': 'Element',
         'publishedDate': '12 mai 2025',
         'location': 'Lyon, 69000',

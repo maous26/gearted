@@ -352,6 +352,108 @@ export const mobileFacebookAuth = async (req: Request, res: Response, next: Next
   }
 };
 
+// Mobile OAuth - Instagram
+export const mobileInstagramAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { accessToken, userId, username, fullName, profilePicture } = req.body;
+
+    if (!accessToken || !userId || !username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token d\'accès, ID utilisateur et nom d\'utilisateur requis',
+      });
+    }
+
+    // For now, we'll use the username as email since Instagram doesn't always provide email
+    const email = `${username}@instagram.local`;
+
+    // Vérifier si l'utilisateur existe déjà
+    let user = await User.findOne({ 
+      $or: [
+        { email: email },
+        { instagramId: userId },
+        { username: username }
+      ]
+    });
+    let isNewUser = false;
+    let wasAccountLinked = false;
+
+    if (user) {
+      // Mettre à jour les informations Instagram si nécessaire
+      if (!user.instagramId) {
+        const hadMultipleMethods = await notificationService.hasMultipleLoginMethods(user._id.toString());
+        user.instagramId = userId;
+        user.provider = 'instagram';
+        user.isEmailVerified = true; // Instagram accounts are considered verified
+        if (!user.profileImage && profilePicture) {
+          user.profileImage = profilePicture;
+        }
+        await user.save();
+        wasAccountLinked = true;
+
+        // Notification de compte OAuth associé
+        if (hadMultipleMethods) {
+          await notificationService.sendOAuthAccountLinkedNotification(
+            user._id.toString(),
+            'instagram'
+          );
+        } else {
+          await notificationService.sendNewOAuthProviderAddedNotification(
+            user._id.toString(),
+            'instagram',
+            ['local']
+          );
+        }
+      }
+
+      // Notification de connexion OAuth réussie
+      await notificationService.sendOAuthLoginSuccessNotification(
+        user._id.toString(),
+        'instagram',
+        req.get('User-Agent') || 'Mobile App',
+        new Date()
+      );
+    } else {
+      // Créer un nouvel utilisateur
+      user = new User({
+        username: username,
+        email: email,
+        instagramId: userId,
+        profileImage: profilePicture,
+        provider: 'instagram',
+        isEmailVerified: true,
+      });
+      await user.save();
+      isNewUser = true;
+
+      // Notification de bienvenue OAuth
+      await notificationService.sendOAuthWelcomeNotification(
+        user._id.toString(),
+        'instagram',
+        true
+      );
+
+      // Notification de vérification email automatique
+      await notificationService.sendOAuthEmailVerificationNotification(
+        user._id.toString(),
+        'instagram'
+      );
+    }
+
+    // Générer un token JWT
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      token,
+      user: formatUserResponse(user),
+    });
+  } catch (error) {
+    logger.error(`Erreur Mobile Instagram Auth: ${error instanceof Error ? error.message : String(error)}`);
+    next(error);
+  }
+};
+
 // Update FCM Token
 export const updateFCMToken = async (req: Request, res: Response, next: NextFunction) => {
   try {

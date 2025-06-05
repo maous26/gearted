@@ -10,6 +10,7 @@ export const getListings = async (req: Request, res: Response, next: NextFunctio
       limit = 10, 
       search = '', 
       category = '',
+      subcategory = '',
       condition = '',
       minPrice,
       maxPrice,
@@ -29,6 +30,11 @@ export const getListings = async (req: Request, res: Response, next: NextFunctio
     // Filtre par catégorie
     if (category) {
       filter.category = category;
+    }
+    
+    // Filtre par sous-catégorie
+    if (subcategory) {
+      filter.subcategory = subcategory;
     }
     
     // Filtre par condition
@@ -119,6 +125,7 @@ export const createListing = async (req: Request, res: Response, next: NextFunct
       imageUrls, 
       condition, 
       category, 
+      subcategory,
       tags, 
       isExchangeable 
     } = req.body;
@@ -134,6 +141,7 @@ export const createListing = async (req: Request, res: Response, next: NextFunct
       imageUrls,
       condition,
       category,
+      subcategory,
       tags,
       isExchangeable,
     });
