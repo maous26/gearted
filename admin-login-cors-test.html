@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login CORS Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background-color: #4F46E5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        pre {
+            background-color: #f6f8fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            overflow: auto;
+            max-height: 300px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Admin Login CORS Test</h1>
+    <p>This page tests if the backend API can be accessed from the admin console origin.</p>
+
+    <div>
+        <button id="testHealthBtn">1. Test Health Endpoint</button>
+        <pre id="healthResult">Results will appear here...</pre>
+    </div>
+
+    <div>
+        <button id="testLoginBtn">2. Test Admin Login</button>
+        <pre id="loginResult">Results will appear here...</pre>
+    </div>
+
+    <div>
+        <button id="testAdminAccessBtn">3. Test Admin Access</button>
+        <pre id="adminResult">Results will appear here...</pre>
+    </div>
+
+    <div>
+        <button id="testNetworkBtn">4. Debug Network</button>
+        <pre id="networkResult">Results will appear here...</pre>
+    </div>
+
+    <script>
+        // Store authentication token
+        let authToken = null;
+
+        // Test health endpoint
+        document.getElementById('testHealthBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('healthResult');
+            resultElement.textContent = 'Testing health endpoint...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultElement.innerHTML = `<span class="success">✅ SUCCESS</span>\nStatus: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultElement.innerHTML = `<span class="error">❌ ERROR</span>\nStatus: ${response.status}\n${response.statusText}`;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">❌ NETWORK ERROR</span>\n${error.message}\n\nThis is likely a CORS issue. Check browser console for details.`;
+                console.error('Health endpoint error:', error);
+            }
+        });
+
+        // Test login
+        document.getElementById('testLoginBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('loginResult');
+            resultElement.textContent = 'Testing admin login...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@gearted.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    authToken = data.token;
+                    resultElement.innerHTML = `<span class="success">✅ LOGIN SUCCESS</span>\nToken: ${data.token.substring(0, 20)}...\nUser: ${data.user.username}`;
+                } else {
+                    resultElement.innerHTML = `<span class="error">❌ LOGIN FAILED</span>\nStatus: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">❌ NETWORK ERROR</span>\n${error.message}\n\nThis is likely a CORS issue. Check browser console for details.`;
+                console.error('Login error:', error);
+            }
+        });
+
+        // Test admin access
+        document.getElementById('testAdminAccessBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('adminResult');
+            
+            if (!authToken) {
+                resultElement.innerHTML = `<span class="error">❌ NO TOKEN</span>\nPlease login first using the login test button.`;
+                return;
+            }
+            
+            resultElement.textContent = 'Testing admin access...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/admin/stats', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultElement.innerHTML = `<span class="success">✅ ADMIN ACCESS SUCCESS</span>\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    resultElement.innerHTML = `<span class="error">❌ ADMIN ACCESS FAILED</span>\nStatus: ${response.status}\n${JSON.stringify(errorData, null, 2)}`;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">❌ NETWORK ERROR</span>\n${error.message}\n\nThis is likely a CORS issue. Check browser console for details.`;
+                console.error('Admin access error:', error);
+            }
+        });
+
+        // Debug network
+        document.getElementById('testNetworkBtn').addEventListener('click', async () => {
+            const resultElement = document.getElementById('networkResult');
+            resultElement.textContent = 'Debugging network connectivity...';
+
+            try {
+                const networkInfo = {
+                    origin: window.location.origin,
+                    apiUrl: 'http://localhost:3000/api',
+                    browserUserAgent: navigator.userAgent,
+                    windowLocation: window.location.href,
+                    cors: 'Testing CORS preflight...'
+                };
+
+                // Test CORS preflight
+                try {
+                    const preflightResponse = await fetch('http://localhost:3000/api/health', {
+                        method: 'OPTIONS'
+                    });
+                    
+                    networkInfo.cors = {
+                        status: preflightResponse.status,
+                        ok: preflightResponse.ok,
+                        headers: {
+                            'Access-Control-Allow-Origin': preflightResponse.headers.get('Access-Control-Allow-Origin'),
+                            'Access-Control-Allow-Methods': preflightResponse.headers.get('Access-Control-Allow-Methods'),
+                            'Access-Control-Allow-Headers': preflightResponse.headers.get('Access-Control-Allow-Headers')
+                        }
+                    };
+                } catch (error) {
+                    networkInfo.cors = `Error: ${error.message}`;
+                }
+
+                resultElement.innerHTML = `<span class="success">✅ NETWORK DEBUG COMPLETE</span>\n${JSON.stringify(networkInfo, null, 2)}`;
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">❌ NETWORK DEBUG ERROR</span>\n${error.message}`;
+                console.error('Network debug error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
