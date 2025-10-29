@@ -6,11 +6,11 @@ import { StyleSheet, Text, View } from "react-native";
 // Features a grenade-style "G" with shopping cart elements
 export function GeartedStandaloneLogo({ 
   size = 120,
-  colors = ["#4B5D3A", "#6B7A57"],
+  colors = ["#4B5D3A", "#6B7A57"] as const,
   showTagline = true 
 }: { 
   size?: number;
-  colors?: string[];
+  colors?: readonly [string, string, ...string[]];
   showTagline?: boolean;
 }) {
   

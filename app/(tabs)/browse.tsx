@@ -1,16 +1,20 @@
-import React, { useState } from "react";
-import { 
-  ScrollView, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StatusBar,
-  Dimensions,
-  Image
+import * as Location from 'expo-location';
+import React, { useEffect, useState } from "react";
+import {
+    Alert,
+    Dimensions,
+    Image,
+    ScrollView,
+    StatusBar,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { THEMES, ThemeKey } from "../../themes";
+import { router } from "expo-router";
+import { useTheme } from "../../components/ThemeProvider";
+import { THEMES } from "../../themes";
 import { CATEGORIES } from "../../data";
 import { CategoryPill } from "../../components/CategoryPill";
 
@@ -93,12 +97,79 @@ const MOCK_PRODUCTS = [
 ];
 
 export default function BrowseScreen() {
-  const [theme] = useState<ThemeKey>("ranger");
+  const { theme } = useTheme();
   const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"recent" | "price_low" | "price_high" | "rating">("recent");
+  const [sortBy, setSortBy] = useState<"recent" | "price_low" | "price_high" | "rating" | "distance">("recent");
+  const [showSortOptions, setShowSortOptions] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   
   const t = THEMES[theme];
+
+  // Simple city -> coordinates map for demo distances
+  const CITY_COORDS: Record<string, { lat: number; lon: number }> = {
+    Paris: { lat: 48.8566, lon: 2.3522 },
+    Lyon: { lat: 45.7640, lon: 4.8357 },
+    Marseille: { lat: 43.2965, lon: 5.3698 },
+    Toulouse: { lat: 43.6047, lon: 1.4442 },
+    Nice: { lat: 43.7102, lon: 7.2620 },
+    Bordeaux: { lat: 44.8378, lon: -0.5792 },
+  };
+
+  function parseCity(location: string): string | null {
+    // Expecting format "City, ZIP"; take the city part
+    const city = location.split(',')[0].trim();
+    return city.length ? city : null;
+  }
+
+  function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const toRad = (x: number) => (x * Math.PI) / 180;
+    const R = 6371; // km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  async function ensureLocation() {
+    if (userLocation) return true;
+    
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          "Permission refusée", 
+          "La localisation est nécessaire pour trier par proximité. Activez-la dans les paramètres de votre téléphone."
+        );
+        return false;
+      }
+      const loc = await Location.getCurrentPositionAsync({});
+      setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      return true;
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible d'obtenir votre position");
+      return false;
+    }
+  }
+
+  useEffect(() => {
+    if (sortBy === 'distance') {
+      ensureLocation();
+    }
+  }, [sortBy]);
+
+  const handleSelectSort = async (key: typeof sortBy) => {
+    if (key === 'distance') {
+      const ok = await ensureLocation();
+      if (!ok) { 
+        setShowSortOptions(false); 
+        return; 
+      }
+    }
+    setSortBy(key);
+    setShowSortOptions(false);
+  };
 
   const filteredProducts = MOCK_PRODUCTS.filter(product => {
     const matchesSearch = searchText === "" || 
@@ -118,6 +189,19 @@ export default function BrowseScreen() {
         return b.price - a.price;
       case "rating":
         return b.rating - a.rating;
+      case "distance": {
+        if (!userLocation) return 0;
+        const cityA = parseCity(a.location);
+        const cityB = parseCity(b.location);
+        const ca = cityA && CITY_COORDS[cityA] ? CITY_COORDS[cityA] : null;
+        const cb = cityB && CITY_COORDS[cityB] ? CITY_COORDS[cityB] : null;
+        if (!ca && !cb) return 0;
+        if (ca && !cb) return -1;
+        if (!ca && cb) return 1;
+        const da = haversine(userLocation.latitude, userLocation.longitude, ca!.lat, ca!.lon);
+        const db = haversine(userLocation.latitude, userLocation.longitude, cb!.lat, cb!.lon);
+        return da - db;
+      }
       default:
         return 0; // Keep original order for "recent"
     }
@@ -142,7 +226,6 @@ export default function BrowseScreen() {
         {product.featured && (
           <View style={{
             position: 'absolute',
-            top: 8,
             right: 8,
             backgroundColor: '#FFD166',
             paddingHorizontal: 8,
@@ -167,9 +250,9 @@ export default function BrowseScreen() {
             {product.condition}
           </Text>
         </View>
-      </View>
+  </View>
 
-      {/* Product Details */}
+  {/* Product Details */}
       <View style={{ padding: 12 }}>
         <Text style={{
           fontSize: 16,
@@ -209,16 +292,38 @@ export default function BrowseScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={{
-          backgroundColor: t.primaryBtn,
-          paddingVertical: 8,
-          borderRadius: 8,
-          alignItems: 'center'
-        }}>
-          <Text style={{ color: t.white, fontWeight: '600', fontSize: 14 }}>
-            Voir le détail
-          </Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity 
+            style={{
+              flex: 1,
+              backgroundColor: t.primaryBtn,
+              paddingVertical: 8,
+              borderRadius: 8,
+              alignItems: 'center'
+            }}
+            onPress={() => router.push(`/product/${product.id}`)}
+          >
+            <Text style={{ color: t.white, fontWeight: '600', fontSize: 14 }}>
+              Voir le détail
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={{
+              backgroundColor: t.cardBg,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: t.border,
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onPress={() => router.push('/(tabs)/messages')}
+          >
+            <Text style={{ fontSize: 18 }}>💬</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -345,19 +450,87 @@ export default function BrowseScreen() {
               {sortedProducts.length} résultat{sortedProducts.length > 1 ? 's' : ''}
             </Text>
             
-            <TouchableOpacity style={{
-              backgroundColor: t.cardBg,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: t.border
-            }}>
-              <Text style={{ color: t.heading, fontSize: 12 }}>
-                📊 Trier
-              </Text>
-            </TouchableOpacity>
+            <View style={{ position: 'relative', zIndex: 100 }}>
+              <TouchableOpacity 
+                style={{
+                  backgroundColor: t.cardBg,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: t.border
+                }}
+                onPress={() => {
+                  console.log('Tri clicked, current showSortOptions:', showSortOptions);
+                  setShowSortOptions(v => !v);
+                }}
+              >
+                <Text style={{ color: t.heading, fontSize: 12 }}>
+                  📊 Trier: {
+                    sortBy === 'recent' ? '🕒 Plus récent' : 
+                    sortBy === 'price_low' ? '💰 Prix ↑' : 
+                    sortBy === 'price_high' ? '💎 Prix ↓' : 
+                    sortBy === 'rating' ? '⭐ Note' : 
+                    '📍 Proximité'
+                  }
+                </Text>
+              </TouchableOpacity>
+              {showSortOptions && (
+                <View style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 36,
+                  backgroundColor: t.cardBg,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: t.border,
+                  shadowColor: '#000',
+                  shadowOpacity: 0.2,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowRadius: 8,
+                  elevation: 5,
+                  zIndex: 1000
+                }}
+                onLayout={() => console.log('Sort menu rendered!')}
+                >
+                  {([
+                    { key: 'recent', label: '🕒 Plus récent' },
+                    { key: 'price_low', label: '💰 Prix croissant' },
+                    { key: 'price_high', label: '💎 Prix décroissant' },
+                    { key: 'rating', label: '⭐ Meilleure note' },
+                    { key: 'distance', label: '📍 Proximité' }
+                  ] as const).map(opt => (
+                    <TouchableOpacity 
+                      key={opt.key}
+                      onPress={() => handleSelectSort(opt.key)}
+                      style={{ paddingHorizontal: 12, paddingVertical: 10, minWidth: 160, backgroundColor: sortBy === opt.key ? t.sectionLight : t.cardBg }}
+                    >
+                      <Text style={{ color: t.heading, fontSize: 14 }}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
+          {sortBy === 'distance' && !userLocation && (
+            <View style={{
+              backgroundColor: t.cardBg,
+              borderWidth: 1,
+              borderColor: t.border,
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 12
+            }}>
+              <Text style={{ color: t.muted, marginBottom: 8 }}>
+                Activez la localisation pour trier par proximité.
+              </Text>
+              <TouchableOpacity onPress={ensureLocation} style={{ backgroundColor: t.primaryBtn, paddingVertical: 8, borderRadius: 6, alignItems: 'center' }}>
+                <Text style={{ color: t.white, fontWeight: '600' }}>Activer la localisation</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Product Grid */}

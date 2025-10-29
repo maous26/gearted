@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
     Dimensions,
@@ -10,18 +11,18 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import { BrandLogo } from "../../components/BrandLogo";
 import { CategoryPill } from "../../components/CategoryPill";
 import { CompatDrawer } from "../../components/CompatDrawer";
 import { CompatibilityTeaser } from "../../components/CompatibilityTeaser";
+import { useTheme } from "../../components/ThemeProvider";
 import { CATEGORIES } from "../../data";
-import { THEMES, ThemeKey } from "../../themes";
+import { THEMES } from "../../themes";
 
 const { width } = Dimensions.get('window');
 
 export default function AuthenticatedHome() {
-  const [theme] = useState<ThemeKey>("ranger"); // Will get from user settings
+  const { theme } = useTheme(); // global theme
   const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isCompatDrawerOpen, setIsCompatDrawerOpen] = useState(false);

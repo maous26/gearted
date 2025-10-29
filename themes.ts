@@ -18,7 +18,7 @@ export const THEMES: Record<
     subtle: string;
     extraMuted: string;
     white: string;
-    gradientColors: string[];
+    gradientColors: readonly [string, string, ...string[]];
   }
 > = {
   ranger: {

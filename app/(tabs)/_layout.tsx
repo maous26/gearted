@@ -2,9 +2,9 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
+import { useTheme } from '../../components/ThemeProvider';
 import { useClientOnlyValue } from '../../components/useClientOnlyValue';
-import { useColorScheme } from '../../components/useColorScheme';
-import Colors from '../../constants/Colors';
+import { THEMES } from '../../themes';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -15,12 +15,18 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { theme } = useTheme();
+  const t = THEMES[theme];
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: t.primaryBtn,
+        tabBarInactiveTintColor: t.muted,
+        tabBarStyle: {
+          backgroundColor: t.navBg,
+          borderTopColor: t.border,
+        },
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
@@ -46,6 +52,14 @@ export default function TabLayout() {
         options={{
           title: 'Vendre',
           tabBarIcon: ({ color }) => <TabBarIcon name="plus-circle" color={color} />,
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ color }) => <TabBarIcon name="comments" color={color} />,
           headerShown: false,
         }}
       />

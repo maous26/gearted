@@ -1,18 +1,25 @@
 import { Stack } from "expo-router";
-import { useEffect, useState } from "react";
-import { useColorScheme, View } from "react-native";
+import { View } from "react-native";
+import { ThemeProvider, useTheme } from "../components/ThemeProvider";
+import { UserProvider } from "../components/UserProvider";
+import { THEMES } from "../themes";
 
-export default function RootLayout() {
-  const system = useColorScheme();
-  const [mode, setMode] = useState<"ranger" | "night">("ranger");
-  useEffect(() => { if (system === "dark") setMode("night"); }, [system]);
-
+function RootInner() {
+  const { theme } = useTheme();
+  const t = THEMES[theme];
   return (
-    <View style={{ 
-      backgroundColor: mode === "night" ? "#0f141a" : "#f7f8f3", 
-      flex: 1 
-    }}>
+    <View style={{ backgroundColor: t.rootBg, flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }} />
     </View>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <UserProvider>
+        <RootInner />
+      </UserProvider>
+    </ThemeProvider>
   );
 }

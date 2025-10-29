@@ -34,6 +34,36 @@ export const CATEGORIES = [
     label: "Vêtements",
     icon: "👕",
     description: "Uniformes, casques, masques"
+  },
+  {
+    slug: "chargeurs",
+    label: "Chargeurs (mag)",
+    icon: "📦",
+    description: "Magazines mid-cap, hi-cap, tambours"
+  },
+  {
+    slug: "protection",
+    label: "Protection",
+    icon: "🛡️",
+    description: "Lunettes, masques, protections faciales"
+  },
+  {
+    slug: "radios",
+    label: "Radios/Comms",
+    icon: "📻",
+    description: "Talkies, PTT, casques, antennes"
+  },
+  {
+    slug: "transport",
+    label: "Sacs & Transport",
+    icon: "🎒",
+    description: "Housses, sacs, mallettes"
+  },
+  {
+    slug: "entretien",
+    label: "Entretien",
+    icon: "🧰",
+    description: "Huiles, graisses, outils, nettoyage"
   }
 ];
 
