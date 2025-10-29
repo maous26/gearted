@@ -1,22 +1,21 @@
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import React, { useState } from "react";
-import { 
-  ScrollView, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
+import {
+  Dimensions,
+  ScrollView,
   StatusBar,
-  Dimensions
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { THEMES, ThemeKey } from "../themes";
-import { CATEGORIES, TRUST, FEATURE_CARDS } from "../data";
-import { FeatureCard } from "../components/FeatureCard";
-import { CategoryPill } from "../components/CategoryPill";
 import { BrandLogo } from "../components/BrandLogo";
-import { CompatibilityTeaser } from "../components/CompatibilityTeaser";
-import { CompatDrawer } from "../components/CompatDrawer";
+import { CategoryPill } from "../components/CategoryPill";
+import { FeatureCard } from "../components/FeatureCard";
+import { CATEGORIES, FEATURE_CARDS, TRUST } from "../data";
+import { THEMES, ThemeKey } from "../themes";
 
 const { width } = Dimensions.get('window');
 
@@ -24,37 +23,8 @@ export default function GeartedLanding() {
   const [theme, setTheme] = useState<ThemeKey>("ranger");
   const [searchText, setSearchText] = useState("");
   const [location, setLocation] = useState("");
-  const [isCompatDrawerOpen, setIsCompatDrawerOpen] = useState(false);
   
   const t = THEMES[theme];
-
-  const ThemeSelector = () => (
-    <View style={{ 
-      flexDirection: 'row', 
-      backgroundColor: 'rgba(255,255,255,0.6)', 
-      borderRadius: 20, 
-      padding: 4,
-      borderWidth: 1,
-      borderColor: 'rgba(0,0,0,0.1)'
-    }}>
-      {(['ranger', 'desert', 'night'] as ThemeKey[]).map((themeKey) => (
-        <TouchableOpacity
-          key={themeKey}
-          onPress={() => setTheme(themeKey)}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 16,
-            backgroundColor: theme === themeKey ? 'rgba(0,0,0,0.1)' : 'transparent'
-          }}
-        >
-          <Text style={{ fontSize: 12, color: '#333', textTransform: 'capitalize' }}>
-            {themeKey === 'night' ? 'Night Ops' : themeKey}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.rootBg }}>
@@ -72,14 +42,29 @@ export default function GeartedLanding() {
         alignItems: 'center'
       }}>
         <BrandLogo theme={theme} size="small" showText={false} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <ThemeSelector />
-          <TouchableOpacity style={{
-            backgroundColor: t.primaryBtn,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            borderRadius: 12
-          }}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity 
+            style={{
+              backgroundColor: 'transparent',
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: t.primaryBtn
+            }}
+            onPress={() => router.push("/login" as any)}
+          >
+            <Text style={{ color: t.primaryBtn, fontWeight: '600' }}>Connexion</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={{
+              backgroundColor: t.primaryBtn,
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 12
+            }}
+            onPress={() => router.push("/register" as any)}
+          >
             <Text style={{ color: t.white, fontWeight: '600' }}>S'inscrire</Text>
           </TouchableOpacity>
         </View>
@@ -147,27 +132,33 @@ export default function GeartedLanding() {
               gap: 12, 
               marginBottom: 24 
             }}>
-              <TouchableOpacity style={{
-                backgroundColor: t.primaryBtn,
-                paddingHorizontal: 20,
-                paddingVertical: 12,
-                borderRadius: 12,
-                flexDirection: 'row',
-                alignItems: 'center'
-              }}>
+              <TouchableOpacity 
+                style={{
+                  backgroundColor: t.primaryBtn,
+                  paddingHorizontal: 20,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}
+                onPress={() => router.push("/register" as any)}
+              >
                 <Text style={{ color: t.white, fontWeight: '600', marginRight: 8 }}>+</Text>
                 <Text style={{ color: t.white, fontWeight: '600' }}>Déposer une annonce</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity style={{
-                borderWidth: 1,
-                borderColor: t.border,
-                backgroundColor: t.white,
-                paddingHorizontal: 20,
-                paddingVertical: 12,
-                borderRadius: 12
-              }}>
-                <Text style={{ color: t.heading, fontWeight: '600' }}>Parcourir</Text>
+              <TouchableOpacity 
+                style={{
+                  borderWidth: 1,
+                  borderColor: t.border,
+                  backgroundColor: t.white,
+                  paddingHorizontal: 20,
+                  paddingVertical: 12,
+                  borderRadius: 12
+                }}
+                onPress={() => router.push("/login" as any)}
+              >
+                <Text style={{ color: t.heading, fontWeight: '600' }}>Se connecter</Text>
               </TouchableOpacity>
             </View>
 
@@ -274,17 +265,6 @@ export default function GeartedLanding() {
               />
             ))}
           </View>
-        </View>
-
-        {/* Compatibility Teaser Section */}
-        <View style={{ 
-          paddingHorizontal: 16, 
-          paddingVertical: 24 
-        }}>
-          <CompatibilityTeaser 
-            theme={theme}
-            onOpenDrawer={() => setIsCompatDrawerOpen(true)}
-          />
         </View>
 
         {/* Features Section */}
@@ -421,13 +401,6 @@ export default function GeartedLanding() {
           </Text>
         </View>
       </ScrollView>
-      
-      {/* Compatibility Drawer */}
-      <CompatDrawer
-        isVisible={isCompatDrawerOpen}
-        onClose={() => setIsCompatDrawerOpen(false)}
-        theme={theme}
-      />
     </SafeAreaView>
   );
 }

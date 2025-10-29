@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Modal, ScrollView, Dimensions } from "react-native";
+import { Dimensions, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { THEMES, ThemeKey } from "../themes";
 
 const { height: screenHeight } = Dimensions.get('window');

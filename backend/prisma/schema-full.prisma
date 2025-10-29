@@ -1,0 +1,168 @@
+// Comprehensive Gearted Database Schema
+// This is a complete schema - we'll implement incrementally
+
+// User Management
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  username          String   @unique
+  password          String
+  firstName         String?
+  lastName          String?
+  avatar            String?
+  phone             String?
+  
+  // Account status
+  isEmailVerified   Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  role              UserRole @default(USER)
+  
+  // Profile information
+  bio               String?
+  location          String?
+  
+  // Security
+  refreshToken      String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  products          Product[]
+  favorites         Favorite[]
+  
+  @@map("users")
+}
+
+// Product Management
+model Category {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  slug              String    @unique
+  description       String?
+  icon              String?
+  isActive          Boolean   @default(true)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  products          Product[]
+  
+  @@map("categories")
+}
+
+model Brand {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  slug              String   @unique
+  description       String?
+  logo              String?
+  isActive          Boolean  @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  products          Product[]
+  
+  @@map("brands")
+}
+
+model Product {
+  id                String        @id @default(cuid())
+  title             String
+  description       String
+  slug              String        @unique
+  
+  // Basic information
+  categoryId        String
+  category          Category      @relation(fields: [categoryId], references: [id])
+  brandId           String?
+  brand             Brand?        @relation(fields: [brandId], references: [id])
+  
+  // Seller information
+  sellerId          String
+  seller            User          @relation(fields: [sellerId], references: [id])
+  
+  // Product details
+  condition         ProductCondition
+  price             Decimal       @db.Money
+  currency          String        @default("EUR")
+  
+  // Product status
+  status            ProductStatus @default(DRAFT)
+  isActive          Boolean       @default(true)
+  
+  // Location and shipping
+  location          String?
+  shippingIncluded  Boolean       @default(false)
+  shippingCost      Decimal?      @db.Money
+  
+  // Analytics
+  views             Int           @default(0)
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  // Relations
+  images            ProductImage[]
+  favorites         Favorite[]
+  
+  @@map("products")
+}
+
+model ProductImage {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  url               String
+  alt               String?
+  sortOrder         Int      @default(0)
+  isPrimary         Boolean  @default(false)
+  
+  createdAt         DateTime @default(now())
+  
+  @@map("product_images")
+}
+
+model Favorite {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt         DateTime @default(now())
+  
+  @@unique([userId, productId])
+  @@map("favorites")
+}
+
+// Enums
+enum UserRole {
+  USER
+  SELLER
+  ADMIN
+  MODERATOR
+}
+
+enum ProductCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  POOR
+  FOR_PARTS
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  SOLD
+  EXPIRED
+  SUSPENDED
+  DELETED
+}

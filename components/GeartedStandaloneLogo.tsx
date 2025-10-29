@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 // Standalone Gearted Logo inspired by the official design
 // Features a grenade-style "G" with shopping cart elements

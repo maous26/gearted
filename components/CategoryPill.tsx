@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, Text, View } from "react-native";
+import { Text, TouchableOpacity } from "react-native";
 import { THEMES, ThemeKey } from "../themes";
 
 export function CategoryPill({
